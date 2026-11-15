@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>纸间气球</title>
+<!-- 纸间气球 v1.0 · 单文件水墨纸艺切气球游戏 -->
+<meta name="description" content="纸间气球：一款水墨纸艺风格的切气球小游戏。经典、禅意、疾风三种玩法，连斩倍率、心流慢镜、时砂加时。单 HTML 文件、零依赖、开箱即玩。">
+<meta name="theme-color" content="#f4f0e6">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='13'%20fill='%23b5382a'/%3E%3Ctext%20x='32'%20y='45'%20font-size='36'%20text-anchor='middle'%20fill='%23faf7ef'%20font-family='serif'%3E%E7%BA%B8%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --paper:#f4f0e6; --paper-hi:#faf7ef;
+    --ink:#26221c; --ink-dim:#7d766a; --ink-faint:#a9a193;
+    --line:rgba(38,34,28,.16); --line-soft:rgba(38,34,28,.08);
+    --seal:#b5382a; --gold:#c08a2a;
+    --verm:#d9482f; --amber:#e8a020; --green:#2e8f7a; --blue:#3a5fa8; --rose:#c2417e;
+    --serif:Georgia,"Songti SC","STSong","SimSun",serif;
+    --ui:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;touch-action:none;overscroll-behavior:none;-webkit-touch-callout:none}
+  body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-weight:300;user-select:none;-webkit-user-select:none}
+  button{font-family:inherit;cursor:pointer}
+  #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  body.playing #stage{cursor:none}
+  #vignette{position:fixed;inset:0;z-index:4;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 42%,transparent 60%,rgba(38,34,28,.08) 100%);
+    transition:background .8s ease}
+  body.fever #vignette{background:radial-gradient(ellipse at 50% 42%,transparent 52%,rgba(192,138,42,.16) 100%)}
+  body.slow #vignette{background:radial-gradient(ellipse at 50% 42%,transparent 52%,rgba(58,95,168,.15) 100%)}
+  body.hit #vignette{background:radial-gradient(ellipse at 50% 42%,transparent 46%,rgba(181,56,42,.24) 100%);transition:background .05s ease}
+
+  /* ===== HUD ===== */
+  #hud{position:fixed;top:0;left:0;right:0;z-index:8;display:flex;justify-content:space-between;align-items:flex-start;
+    padding:26px 76px;pointer-events:none;opacity:0;transition:opacity .6s ease}
+  body.playing #hud,body.sweeping #hud{opacity:1}
+  .hud-label{display:block;font-size:10px;letter-spacing:.4em;color:var(--ink-faint);margin-bottom:6px}
+  .hud-value{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1}
+  .hud-left{min-width:150px}
+  #timeBarWrap{width:132px;height:1px;background:var(--line-soft);margin-top:10px}
+  #timeBar{height:1px;width:100%;background:var(--ink-dim);transition:width .12s linear}
+  #timeVal.danger{color:var(--seal)}
+  #timeVal.critical{animation:blink 1s ease-in-out infinite}
+  @keyframes blink{50%{opacity:.45}}
+  .hud-center{text-align:center}
+  .keep-row{display:flex;align-items:center;justify-content:center;gap:9px}
+  #keepSwatch{width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}
+  #keepName{font-family:var(--serif);font-size:19px;letter-spacing:.24em;text-indent:.24em}
+  .hud-right{display:flex;align-items:flex-start;gap:30px;min-width:150px;justify-content:flex-end}
+  #comboBox{text-align:center;opacity:0;transition:opacity .3s ease;margin-top:14px}
+  #comboBox.on{opacity:1}
+  #comboVal{font-family:var(--serif);font-size:22px;line-height:1}
+  #multVal{font-size:13px;color:var(--ink-faint);margin-left:6px;letter-spacing:.08em}
+  #multVal.hot{color:var(--seal)}
+  #comboBarWrap{width:74px;height:1px;background:var(--line-soft);margin:9px auto 0}
+  #comboBar{height:1px;width:0;background:var(--seal)}
+  .score-wrap{text-align:right}
+  #scoreVal{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1}
+
+  #muteBtn,#pauseBtn,#fsBtn{position:fixed;top:22px;z-index:25;width:36px;height:36px;border-radius:50%;
+    border:1px solid var(--line);background:rgba(250,247,239,.7);color:var(--ink-dim);
+    display:flex;align-items:center;justify-content:center;transition:all .25s ease}
+  #muteBtn:hover,#pauseBtn:hover,#fsBtn:hover{color:var(--ink);border-color:var(--ink-dim)}
+  #muteBtn{left:22px}
+  #fsBtn{left:66px}
+  #pauseBtn{right:22px;display:none}
+  body.playing #pauseBtn{display:flex}
+
+  #sweepHint{position:fixed;top:104px;left:50%;transform:translateX(-50%);z-index:8;pointer-events:none;
+    font-size:11px;letter-spacing:.42em;text-indent:.42em;color:var(--ink-dim);opacity:0;transition:opacity .5s ease}
+  #sweepHint.show{opacity:1}
+  #playHint{position:fixed;top:60%;left:50%;transform:translateX(-50%);z-index:8;pointer-events:none;
+    font-size:12px;letter-spacing:.4em;text-indent:.4em;color:var(--ink-faint);opacity:0;transition:opacity .8s ease}
+  #playHint.show{opacity:1}
+
+  /* ===== 择局 ===== */
+  .mode-head{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:30px}
+  .mode-head .mh-line{width:52px;height:1px;background:var(--line)}
+  .mode-head .mh-text{font-size:10px;letter-spacing:.5em;text-indent:.5em;color:var(--ink-dim)}
+  .mode-row{display:flex;justify-content:center;gap:16px;margin-top:16px}
+  .mode-btn{background:none;border:1px solid var(--line);padding:12px 18px 13px;min-width:104px;position:relative;color:var(--ink);transition:border-color .25s ease}
+  .mode-btn .m-name{display:block;font-family:var(--serif);font-weight:400;font-size:18px;letter-spacing:.34em;text-indent:.34em;color:var(--ink-faint);transition:color .25s ease}
+  .mode-btn .m-desc{display:block;margin-top:7px;font-size:9px;letter-spacing:.3em;text-indent:.3em;color:var(--ink-faint);opacity:.75}
+  .mode-btn::before{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%) scale(0);
+    width:5px;height:5px;border-radius:50%;background:var(--seal);transition:transform .3s ease}
+  .mode-btn.on::before{transform:translateX(-50%) scale(1)}
+  .mode-btn.on{border-color:var(--ink-dim)}
+  .mode-btn:hover{border-color:var(--ink-dim)}
+  .mode-btn.on .m-name,.mode-btn:hover .m-name{color:var(--ink)}
+
+  /* ===== 三息 ===== */
+  #lifeBox{display:none}
+  #lifeDots{display:flex;gap:8px;margin-top:15px}
+  .life-dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--ink-dim);background:var(--ink-dim);transition:all .35s ease}
+  .life-dot.off{background:transparent;border-color:var(--line);transform:scale(.7)}
+
+  /* ===== 覆盖层 ===== */
+  .overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:rgba(38,34,28,.22) transparent}
+  .overlay::-webkit-scrollbar{width:6px}
+  .overlay::-webkit-scrollbar-track{background:transparent}
+  .overlay::-webkit-scrollbar-thumb{background:rgba(38,34,28,.18);border-radius:3px}
+  .overlay::-webkit-scrollbar-thumb:hover{background:rgba(38,34,28,.32)}
+  .overlay.hidden{display:none}
+  #resultScreen{background:rgba(244,240,230,.88);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+  .col{text-align:center;max-width:640px;padding:56px 28px;animation:rise .7s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .overline{font-size:10px;letter-spacing:.56em;text-indent:.56em;color:var(--ink-faint);margin-bottom:22px}
+  .wordmark{font-family:var(--serif);font-weight:400;font-size:clamp(44px,8vw,70px);letter-spacing:.26em;text-indent:.26em;line-height:1.15}
+  .rule-line{width:64px;height:1px;background:var(--line);margin:26px auto}
+  .tagline{font-size:13px;letter-spacing:.2em;color:var(--ink-dim);line-height:2}
+  .tagline b{font-weight:400;color:var(--ink)}
+  .ink-btn{margin-top:32px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+    font-size:14px;letter-spacing:.5em;text-indent:.5em;padding:14px 52px;transition:all .25s ease}
+  .ink-btn:hover{background:var(--seal);border-color:var(--seal)}
+  .ghost-btn{margin-top:32px;border:1px solid var(--line);background:transparent;color:var(--ink-dim);
+    font-size:14px;letter-spacing:.5em;text-indent:.5em;padding:14px 34px;transition:all .25s ease}
+  .ghost-btn:hover{border-color:var(--ink-dim);color:var(--ink)}
+  .meta-line{margin-top:26px;font-size:11px;letter-spacing:.22em;color:var(--ink-faint)}
+
+  /* ===== 结算 ===== */
+  .score-row{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:6px}
+  #rScore{font-family:var(--serif);font-size:72px;line-height:1;font-variant-numeric:tabular-nums}
+  .seal-rank{width:52px;height:52px;background:var(--seal);color:var(--paper-hi);transform:rotate(-4deg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:2px 3px 0 rgba(38,34,28,.12)}
+  #rRank{font-family:var(--serif);font-size:26px;line-height:1}
+  #rRankName{font-size:8px;letter-spacing:.18em;margin-top:3px;opacity:.85}
+  #recordLine{margin-top:16px;font-size:11px;letter-spacing:.3em;color:var(--seal);min-height:15px}
+  .stat-line{display:flex;justify-content:center;gap:38px;margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft)}
+  .stat .s-label{font-size:10px;letter-spacing:.3em;color:var(--ink-faint);margin-bottom:8px}
+  .stat .s-value{font-family:var(--serif);font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+  .stat.bad .s-value{color:var(--seal)}
+  .stat.keep .s-value{color:var(--green)}
+  .sub-line{margin-top:22px;font-size:11px;letter-spacing:.18em;color:var(--ink-dim)}
+  .btn-row{display:flex;justify-content:center;gap:14px}
+  .btn-row .ink-btn,.btn-row .ghost-btn{margin-top:34px;min-width:212px}
+
+  /* ===== 署名 ===== */
+  #signBar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+    padding:13px 22px;background:linear-gradient(transparent,rgba(244,240,230,.92) 40%)}
+  #signBtn{display:flex;align-items:center;gap:10px;border:none;background:transparent;color:var(--ink-dim);
+    font-size:11px;letter-spacing:.24em;padding:4px 2px;transition:color .25s ease}
+  #signBtn:hover{color:var(--ink)}
+  .sign-seal{width:19px;height:19px;background:var(--seal);color:var(--paper-hi);font-family:var(--serif);
+    font-size:11px;display:flex;align-items:center;justify-content:center;transform:rotate(-3deg);flex:none}
+  .sign-right{display:flex;gap:22px;font-size:10px;letter-spacing:.24em;color:var(--ink-faint)}
+  #signPop{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(38,34,28,.22)}
+  #signPop.hidden{display:none}
+  .sign-card{background:var(--paper-hi);border:1px solid var(--line);padding:34px 40px;text-align:center;
+    box-shadow:0 18px 50px rgba(38,34,28,.16);animation:rise .35s cubic-bezier(.2,.7,.3,1) both}
+  .sign-card .overline{margin-bottom:16px}
+  #signInput{border:none;border-bottom:1px solid var(--line);background:transparent;outline:none;
+    font-family:var(--serif);font-size:18px;letter-spacing:.14em;color:var(--ink);text-align:center;
+    padding:8px 4px;width:220px;transition:border-color .25s ease}
+  #signInput:focus{border-color:var(--ink-dim)}
+  .sign-btns{display:flex;justify-content:center;gap:12px;margin-top:24px}
+  .sign-btns button{font-size:12px;letter-spacing:.3em;text-indent:.3em;padding:9px 24px;transition:all .25s ease}
+  #signOk{border:1px solid var(--ink);background:var(--ink);color:var(--paper)}
+  #signOk:hover{background:var(--seal);border-color:var(--seal)}
+  #signCancel{border:1px solid var(--line);background:transparent;color:var(--ink-dim)}
+  #signCancel:hover{color:var(--ink);border-color:var(--ink-dim)}
+
+  @media (max-width:640px){
+    #hud{padding:18px 56px}
+    .hud-value,#scoreVal{font-size:20px}
+    .hud-left{min-width:0}
+    #timeBarWrap{width:86px}
+    .hud-right{gap:16px;min-width:0}
+    #comboBarWrap{display:none}
+    #comboBox .hud-label{display:none}
+    #comboVal{font-size:17px}
+    #keepName{font-size:16px}
+    #muteBtn,#pauseBtn,#fsBtn{top:14px;width:32px;height:32px}
+    #muteBtn{left:14px}
+    #fsBtn{left:54px}
+    #pauseBtn{right:14px}
+    .mode-row{gap:10px}
+    .mode-btn{min-width:96px;padding:10px 8px 11px}
+    .mode-btn .m-name{font-size:16px}
+    #sweepHint{top:86px;font-size:10px}
+    .col{padding:44px 20px}
+    .wordmark{letter-spacing:.18em;text-indent:.18em}
+    .stat-line{gap:20px}
+    .stat .s-value{font-size:20px}
+    #rScore{font-size:56px}
+    .sign-right{gap:12px}
+    #signBar{padding:10px 14px}
+    .btn-row{flex-direction:column;gap:0}
+    .btn-row .ghost-btn{margin-top:12px}
+  }
+  @media (max-width:400px){
+    .hud-label{letter-spacing:.24em}
+    .mode-row{gap:16px}
+    .sign-right #bestTag{display:none}
+    .stat-line{gap:14px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="vignette"></div>
+
+<div id="hud">
+  <div class="hud-left">
+    <div id="timeBox">
+      <span class="hud-label">时间</span>
+      <span class="hud-value" id="timeVal">20.00</span>
+      <div id="timeBarWrap"><div id="timeBar"></div></div>
+    </div>
+    <div id="lifeBox">
+      <span class="hud-label">三息</span>
+      <div id="lifeDots"><span class="life-dot"></span><span class="life-dot"></span><span class="life-dot"></span></div>
+    </div>
+  </div>
+  <div class="hud-center">
+    <span class="hud-label">保留</span>
+    <div class="keep-row"><span id="keepSwatch"></span><span id="keepName">朱砂</span></div>
+    <div id="comboBox">
+      <span class="hud-label">连斩</span>
+      <span id="comboVal">0</span><span id="multVal">×1</span>
+      <div id="comboBarWrap"><div id="comboBar"></div></div>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="score-wrap">
+      <span class="hud-label">分数</span>
+      <span id="scoreVal">0</span>
+    </div>
+  </div>
+</div>
+
+<button id="muteBtn" title="声音开关" aria-label="声音开关">
+  <svg id="icoSoundOn" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 6v4h3l3.5 3V3L5 6H2z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5"/><path d="M12.8 3.8a6 6 0 0 1 0 8.4"/>
+  </svg>
+  <svg id="icoSoundOff" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <path d="M2 6v4h3l3.5 3V3L5 6H2z"/><path d="M11 6l4 4M15 6l-4 4"/>
+  </svg>
+</button>
+
+<button id="fsBtn" title="全屏" aria-label="全屏">
+  <svg id="icoFsOff" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 2H2v4M10 2h4v4M14 10v4h-4M6 14H2v-4"/>
+  </svg>
+  <svg id="icoFsOn" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <path d="M2 6h4V2M14 6h-4V2M14 10h-4v4M2 10h4v4"/>
+  </svg>
+</button>
+
+<button id="pauseBtn" title="暂停" aria-label="暂停">
+  <svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <path d="M3.5 2.5v9M8.5 2.5v9"/>
+  </svg>
+</button>
+
+<div id="sweepHint">时尽 · 回收中 · 仍可切</div>
+<div id="playHint">滑动即切 · 一刀两断</div>
+
+<div class="overlay" id="titleScreen">
+  <div class="col">
+    <div class="overline">纸间工坊</div>
+    <h1 class="wordmark">纸间气球</h1>
+    <div class="rule-line"></div>
+    <div class="tagline">运笔即切 · <b>非留皆斩</b><br>心留一色 · 避雷取砂</div>
+    <div class="mode-head"><span class="mh-line"></span><span class="mh-text">点击择局</span><span class="mh-line"></span></div>
+    <div class="mode-row" id="modeRow">
+      <button class="mode-btn on" data-mode="classic"><span class="m-name">经典</span><span class="m-desc">廿秒为限</span></button>
+      <button class="mode-btn" data-mode="zen"><span class="m-name">禅意</span><span class="m-desc">无雷静心</span></button>
+      <button class="mode-btn" data-mode="gale"><span class="m-name">疾风</span><span class="m-desc">三息为命</span></button>
+    </div>
+    <button class="ink-btn" id="startBtn">入 局</button>
+    <div class="meta-line" id="bestTitle"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="resultScreen">
+  <div class="col">
+    <div class="overline">终局 · <span id="rDiff">经典</span></div>
+    <div class="score-row">
+      <div id="rScore">0</div>
+      <div class="seal-rank"><div id="rRank">B</div><div id="rRankName">渐入佳境</div></div>
+    </div>
+    <div id="recordLine"></div>
+    <div class="stat-line">
+      <div class="stat"><div class="s-label">切落</div><div class="s-value" id="rTotal">0</div></div>
+      <div class="stat"><div class="s-label">切对</div><div class="s-value" id="rGood">0</div></div>
+      <div class="stat bad"><div class="s-label">误切</div><div class="s-value" id="rBad">0</div></div>
+      <div class="stat"><div class="s-label">漏网</div><div class="s-value" id="rMiss">0</div></div>
+      <div class="stat keep"><div class="s-label">保留</div><div class="s-value" id="rKeep">0</div></div>
+    </div>
+    <div class="sub-line"><span id="rCombo">最高连斩 0</span> · <span id="rStroke">一刀 0 连</span> · <span id="rTime">加时 0 秒</span></div>
+    <div class="btn-row">
+      <button class="ink-btn" id="againBtn">再来一局</button>
+      <button class="ghost-btn" id="backBtn">回到卷首</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="pauseScreen">
+  <div class="col">
+    <div class="overline">暂停 · 小憩</div>
+    <h1 class="wordmark">停云</h1>
+    <div class="rule-line"></div>
+    <div class="tagline">笔悬半空 · 气球未散</div>
+    <div class="btn-row">
+      <button class="ink-btn" id="resumeBtn">续 局</button>
+      <button class="ghost-btn" id="quitBtn">回到卷首</button>
+    </div>
+  </div>
+</div>
+
+<div id="signPop" class="hidden">
+  <div class="sign-card">
+    <div class="overline">题名落款</div>
+    <input id="signInput" maxlength="12" placeholder="题下名号" autocomplete="off">
+    <div class="sign-btns">
+      <button id="signOk">落 款</button>
+      <button id="signCancel">作 罢</button>
+    </div>
+  </div>
+</div>
+
+<div id="signBar">
+  <button id="signBtn"><span class="sign-seal">署</span><span id="signText">落款留名</span></button>
+  <div class="sign-right"><span id="bestTag">最佳 0</span></div>
+</div>
+
+<script>
+'use strict';
+/* ================= 基础 ================= */
+const $ = id => document.getElementById(id);
+const canvas = $('stage');
+const ctx = canvas.getContext('2d', { alpha: false });
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const shade = (rgb, f) => rgb.map(c => clamp(Math.round(f > 0 ? c + (255 - c) * f : c * (1 + f)), 0, 255));
+const rgba = (rgb, a) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let W = 0, H = 0, DPR = 1, SCALE = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  SCALE = clamp(Math.min(W, H) / 760, .66, 1.25);
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ================= 配色：纸 · 墨 · 国画五色 ================= */
+const COLORS = [
+  { name: '朱砂', css: '#d9482f', rgb: [217, 72, 47] },
+  { name: '藤黄', css: '#e8a020', rgb: [232, 160, 32] },
+  { name: '石绿', css: '#2e8f7a', rgb: [46, 143, 122] },
+  { name: '黛蓝', css: '#3a5fa8', rgb: [58, 95, 168] },
+  { name: '胭脂', css: '#c2417e', rgb: [194, 65, 126] },
+];
+const GOLD = { name: '时砂', css: '#c9972e', rgb: [201, 151, 46] };
+const SLATE = { name: '墨涟', css: '#4a4e56', rgb: [74, 78, 86] };
+const INK = [38, 34, 28], PAPER = [244, 240, 230], SEAL = [181, 56, 42];
+const DIFFS = {
+  classic: { key: 'classic', label: '经典', time: 20, interval: .40, speed: 175, bombChance: .09, bombMax: 2, feverAt: 10, note: '廿秒为限' },
+  zen:     { key: 'zen',     label: '禅意', time: 60, interval: .46, speed: 158, bombChance: 0,   bombMax: 0, feverAt: 10, note: '无雷静心' },
+  gale:    { key: 'gale',    label: '疾风', time: 0,  interval: .30, speed: 190, bombChance: .13, bombMax: 3, feverAt: 8,  note: '三息为命', noTimer: true, lives: 3, wind: true },
+};
+const CFG = { comboWindow: 1.8, sweepMax: 3.6, timeCap: 8, feverDur: 6, slowDur: 3.4, slowScale: .45 };
+const MODE = () => DIFFS[G.diff];
+
+/* ================= 精灵烘焙 ================= */
+function makeCanvas(s) { const c = document.createElement('canvas'); c.width = c.height = s; return c; }
+const SPRITES = {};
+function balloonSprite(rgb) {
+  const key = 'b' + rgb.join();
+  if (SPRITES[key]) return SPRITES[key];
+  const c = makeCanvas(256), g = c.getContext('2d');
+  const p = new Path2D();
+  p.moveTo(128, 6);
+  p.bezierCurveTo(196, 6, 228, 62, 228, 118);
+  p.bezierCurveTo(228, 176, 182, 214, 128, 230);
+  p.bezierCurveTo(74, 214, 28, 176, 28, 118);
+  p.bezierCurveTo(28, 62, 60, 6, 128, 6);
+  p.closePath();
+  const lg = g.createLinearGradient(0, 0, 0, 256);
+  lg.addColorStop(0, rgba(shade(rgb, .30), 1));
+  lg.addColorStop(.45, rgba(rgb, 1));
+  lg.addColorStop(1, rgba(shade(rgb, -.24), 1));
+  g.fillStyle = lg; g.fill(p);
+  g.save(); g.clip(p);
+  const hl = g.createRadialGradient(88, 66, 4, 88, 66, 120);
+  hl.addColorStop(0, 'rgba(255,255,255,.30)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = hl; g.fillRect(0, 0, 256, 256);
+  const bs = g.createRadialGradient(128, 236, 10, 128, 236, 150);
+  bs.addColorStop(0, rgba(shade(rgb, -.38), .34)); bs.addColorStop(1, rgba(shade(rgb, -.38), 0));
+  g.fillStyle = bs; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = rgba(shade(rgb, -.30), .16); g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(122, 14); g.quadraticCurveTo(108, 118, 122, 222); g.stroke();
+  g.restore();
+  g.strokeStyle = rgba(shade(rgb, -.42), .55); g.lineWidth = 2; g.stroke(p);
+  g.fillStyle = 'rgba(255,255,255,.4)';
+  g.beginPath(); g.ellipse(86, 62, 17, 9, -.6, 0, Math.PI * 2); g.fill();
+  g.fillStyle = rgba(shade(rgb, -.26), 1);
+  g.beginPath(); g.moveTo(128, 228); g.lineTo(119, 244); g.lineTo(137, 244); g.closePath(); g.fill();
+  SPRITES[key] = c; return c;
+}
+function bombSprite() {
+  if (SPRITES.bomb) return SPRITES.bomb;
+  const c = makeCanvas(256), g = c.getContext('2d');
+  const p = new Path2D();
+  p.moveTo(128, 10);
+  p.bezierCurveTo(194, 10, 226, 64, 226, 118);
+  p.bezierCurveTo(226, 174, 180, 212, 128, 228);
+  p.bezierCurveTo(76, 212, 30, 174, 30, 118);
+  p.bezierCurveTo(30, 64, 62, 10, 128, 10);
+  p.closePath();
+  const lg = g.createLinearGradient(0, 0, 0, 256);
+  lg.addColorStop(0, '#4a453c'); lg.addColorStop(.5, '#2b2721'); lg.addColorStop(1, '#191612');
+  g.fillStyle = lg; g.fill(p);
+  g.save(); g.clip(p);
+  const hl = g.createRadialGradient(90, 68, 4, 90, 68, 110);
+  hl.addColorStop(0, 'rgba(255,255,255,.14)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = hl; g.fillRect(0, 0, 256, 256);
+  g.restore();
+  g.strokeStyle = 'rgba(20,17,13,.8)'; g.lineWidth = 2; g.stroke(p);
+  g.strokeStyle = '#8a7f6d'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(128, 12); g.quadraticCurveTo(140, -2, 154, 4); g.stroke();
+  g.fillStyle = rgba(shade(GOLD.rgb, .2), 1);
+  g.beginPath(); g.arc(156, 4, 5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = rgba(SEAL, .8); g.lineWidth = 2;
+  g.beginPath(); g.moveTo(108, 108); g.lineTo(148, 148); g.moveTo(148, 108); g.lineTo(108, 148); g.stroke();
+  SPRITES.bomb = c; return c;
+}
+function inkSprite() {
+  if (SPRITES.ink) return SPRITES.ink;
+  const c = makeCanvas(256), g = c.getContext('2d');
+  const p = new Path2D();
+  p.moveTo(128, 10);
+  p.bezierCurveTo(192, 10, 224, 62, 224, 116);
+  p.bezierCurveTo(224, 172, 180, 210, 128, 226);
+  p.bezierCurveTo(76, 210, 32, 172, 32, 116);
+  p.bezierCurveTo(32, 62, 64, 10, 128, 10);
+  p.closePath();
+  const lg = g.createLinearGradient(0, 0, 0, 256);
+  lg.addColorStop(0, '#4b4f58'); lg.addColorStop(.5, '#2e3238'); lg.addColorStop(1, '#1b1e22');
+  g.fillStyle = lg; g.fill(p);
+  g.save(); g.clip(p);
+  const hl = g.createRadialGradient(92, 66, 4, 92, 66, 110);
+  hl.addColorStop(0, 'rgba(244,240,230,.16)'); hl.addColorStop(1, 'rgba(244,240,230,0)');
+  g.fillStyle = hl; g.fillRect(0, 0, 256, 256);
+  g.restore();
+  // 水纹涟漪
+  g.strokeStyle = 'rgba(244,240,230,.62)'; g.lineWidth = 2;
+  g.beginPath(); g.arc(128, 118, 30, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(244,240,230,.34)'; g.lineWidth = 1.6;
+  g.beginPath(); g.arc(128, 118, 52, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(244,240,230,.18)'; g.lineWidth = 1.2;
+  g.beginPath(); g.arc(128, 118, 74, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = 'rgba(244,240,230,.8)';
+  g.beginPath(); g.arc(128, 118, 5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(16,18,20,.85)'; g.lineWidth = 2; g.stroke(p);
+  SPRITES.ink = c; return c;
+}
+function glowSprite(rgb) {
+  const key = 'g' + rgb.join();
+  if (SPRITES[key]) return SPRITES[key];
+  const c = makeCanvas(128), g = c.getContext('2d');
+  const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  rg.addColorStop(0, rgba(rgb, .5)); rg.addColorStop(1, rgba(rgb, 0));
+  g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+  SPRITES[key] = c; return c;
+}
+const grainTile = (() => {
+  const c = makeCanvas(160), g = c.getContext('2d');
+  const d = g.createImageData(160, 160);
+  for (let i = 0; i < d.data.length; i += 4) {
+    d.data[i] = 38; d.data[i + 1] = 34; d.data[i + 2] = 28;
+    d.data[i + 3] = Math.random() < .55 ? 0 : (Math.random() * 8 | 0);
+  }
+  g.putImageData(d, 0, 0); return c;
+})();
+let grainPattern = null;
+
+/* ================= 音效（纸墨质感：笔刷、木鱼、纸铃） ================= */
+const AudioEngine = {
+  ac: null, master: null, muted: false,
+  ensure() {
+    if (!this.ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ac = new AC();
+      const comp = this.ac.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.ratio.value = 8;
+      this.master = this.ac.createGain();
+      this.master.gain.value = this.muted ? 0 : .9;
+      this.master.connect(comp); comp.connect(this.ac.destination);
+    }
+    if (this.ac.state === 'suspended') this.ac.resume();
+  },
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : .9;
+    if (m) this.setAmb(0);
+    else if (G.phase === 'play' && !G.paused) this.startAmb();
+  },
+  amb: null,
+  startAmb() {
+    if (!this.ac || this.muted || this.amb) return;
+    const len = Math.floor(this.ac.sampleRate * 2);
+    const buf = this.ac.createBuffer(1, len, this.ac.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; last = last * .96 + w * .04; d[i] = last * 3.4; }
+    const src = this.ac.createBufferSource(); src.buffer = buf; src.loop = true;
+    const f = this.ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+    const g = this.ac.createGain(); g.gain.value = 0;
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start();
+    this.amb = { src, g };
+    this.setAmb(ambBase);
+  },
+  setAmb(v) { if (this.amb && this.ac) this.amb.g.gain.setTargetAtTime(v, this.ac.currentTime, .5); },
+  stopAmb() {
+    if (!this.amb) return;
+    const a = this.amb; this.amb = null;
+    try { a.g.gain.setTargetAtTime(0, this.ac.currentTime, .25); setTimeout(() => { try { a.src.stop(); } catch (e) {} }, 1200); } catch (e) {}
+  },
+  tone(type, f0, f1, dur, peak, delay) {
+    if (!this.ac || this.muted) return;
+    const t = this.ac.currentTime + (delay || 0);
+    const o = this.ac.createOscillator(), g = this.ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + .006);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + .05);
+  },
+  noise(dur, type, freq, q, peak, delay) {
+    if (!this.ac || this.muted) return;
+    const t = this.ac.currentTime + (delay || 0);
+    const len = Math.max(1, Math.floor(this.ac.sampleRate * dur));
+    const buf = this.ac.createBuffer(1, len, this.ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = this.ac.createBufferSource(); src.buffer = buf;
+    const f = this.ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = this.ac.createGain();
+    g.gain.setValueAtTime(peak, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t); src.stop(t + dur);
+  },
+  slice(combo) {
+    const p = [1, 9 / 8, 5 / 4, 3 / 2, 5 / 3][combo % 5] * (1 + Math.min(combo, 12) * .015);
+    this.tone('sine', 420 * p, 130, .09, .26);
+    this.noise(.03, 'highpass', 3000, .7, .22);
+    this.noise(.09, 'bandpass', 1500 * p, 1.1, .12);
+  },
+  whoosh() { this.noise(.08, 'bandpass', rand(1700, 2400), 1.3, .03); },
+  wrong() { this.tone('triangle', 240, 185, .12, .3); this.tone('triangle', 165, 128, .16, .26, .08); this.noise(.09, 'lowpass', 900, .7, .2); },
+  bomb() { this.tone('sine', 110, 30, .5, .4); this.noise(.4, 'lowpass', 400, .6, .3); this.noise(.05, 'highpass', 2600, .7, .14); },
+  gold() { this.tone('triangle', 880, 880, .16, .12); this.tone('triangle', 1318.5, 1318.5, .24, .1, .1); },
+  flourish() { [659.25, 880, 1174.66].forEach((f, i) => this.tone('sine', f, f, .14, .09, i * .05)); },
+  fever() { [523.25, 659.25, 783.99].forEach(f => this.tone('sine', f, f, .5, .07)); },
+  tick() { this.tone('sine', 1150, 1080, .045, .06); },
+  sweep() { this.noise(.5, 'bandpass', 900, .8, .06); this.tone('sine', 300, 700, .5, .05); },
+  result() { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone('sine', f, f, .6, .07, i * .09)); },
+  record() { [783.99, 1046.5, 1318.5, 1568].forEach((f, i) => this.tone('sine', f, f, .3, .08, i * .08)); },
+  click() { this.tone('sine', 1400, 1000, .05, .05); },
+  slowmo() { this.tone('sine', 620, 130, .55, .12); this.tone('sine', 310, 70, .85, .08, .07); this.noise(.5, 'lowpass', 800, .7, .05); },
+  breath() { this.tone('sine', 330, 150, .3, .18); this.noise(.25, 'bandpass', 650, 1, .07); },
+  gust() { this.noise(.8, 'bandpass', rand(480, 860), .6, .045); },
+  tier() { this.tone('sine', 760, 730, .07, .15); this.noise(.045, 'bandpass', 1250, 5, .16); },
+  feverEnd() { this.tone('sine', 783.99, 740, .45, .05); this.tone('sine', 587.33, 540, .5, .045, .14); },
+  gong() { this.tone('sine', 175, 84, 1.2, .22); this.tone('sine', 350, 170, .9, .08, .02); this.noise(.5, 'lowpass', 320, .6, .1); },
+};
+
+/* ================= 状态 ================= */
+const G = {
+  phase: 'title', time: 20, score: 0, combo: 0, comboT: 0, fever: 0,
+  diff: 'classic', keep: 0, sweepT: 0, ascendT: 0, camY: 0, camTo: 0,
+  spawnT: 0, goldT: 8, inkT: 12, slow: 0, lives: 3, endPending: false,
+  wind: { cur: 0, to: 0, t: 3 }, streaks: [],
+  elapsed: 0, lastWhole: 99, timeAdded: 0, noSpawn: false, paused: false,
+  freeze: 0, shakeT: 0, shakeDur: .001, shakeMag: 0,
+  stats: { total: 0, good: 0, bad: 0, missed: 0, kept: 0, maxCombo: 0, bestStroke: 0 },
+  balloons: [], halves: [], confetti: [], rings: [], splashes: [], floats: [], cuts: [],
+  shelf: [], missedLog: [], keptLog: [],
+  lastTier: 1,
+};
+let gTime = 0;
+let ambBase = .005;
+let hitT = null;
+const trail = [];
+const ptr = { down: false, x: -999, y: -999, px: 0, py: 0, seen: false, stroke: 0, lastSlice: -9, sx: 0, sy: 0 };
+let uid = 0;
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+/* ================= DOM ================= */
+const timeEl = $('timeVal'), timeBar = $('timeBar'), scoreEl = $('scoreVal');
+const keepSwatch = $('keepSwatch'), keepName = $('keepName');
+const comboBox = $('comboBox'), comboVal = $('comboVal'), multVal = $('multVal'), comboBar = $('comboBar');
+const sweepHint = $('sweepHint'), playHint = $('playHint');
+const titleScreen = $('titleScreen'), resultScreen = $('resultScreen');
+const pauseScreen = $('pauseScreen');
+const timeBox = $('timeBox'), lifeBox = $('lifeBox'), lifeDots = $('lifeDots');
+const modeBtns = Array.from(document.querySelectorAll('.mode-btn'));
+const signPop = $('signPop'), signInput = $('signInput'), signText = $('signText');
+const bestTag = $('bestTag'), bestTitle = $('bestTitle');
+
+let selMode = store.get('paper.mode', 'classic');
+if (!DIFFS[selMode]) selMode = 'classic';
+function getBest(m) {
+  const key = m || selMode;
+  const v = store.get('paper.best.' + key, null);
+  if (v !== null) return parseInt(v, 10) || 0;
+  if (key === 'classic') return parseInt(store.get('paper.best', '0'), 10) || 0;
+  return 0;
+}
+function refreshMeta() {
+  const b = getBest();
+  bestTag.textContent = '最佳 ' + b;
+  bestTitle.textContent = b > 0 ? (DIFFS[selMode].label + ' · 最佳 ' + b) : (DIFFS[selMode].label + ' · 尚无纪录');
+}
+function refreshModeUI() {
+  modeBtns.forEach(btn => btn.classList.toggle('on', btn.dataset.mode === selMode));
+}
+function refreshSign() {
+  const s = store.get('paper.sign', '');
+  signText.textContent = s ? s + ' · 已落款' : '落款留名';
+}
+function refreshMuteIcon() {
+  $('icoSoundOn').style.display = AudioEngine.muted ? 'none' : 'block';
+  $('icoSoundOff').style.display = AudioEngine.muted ? 'block' : 'none';
+}
+
+/* ================= 气球 ================= */
+function makeBalloon(o) {
+  o = o || {};
+  const kind = o.kind || 'normal';
+  const small = kind === 'normal' && Math.random() < .2;
+  const special = kind === 'bomb' || kind === 'gold' || kind === 'ink';
+  const rx = (special ? 30 : small ? rand(24, 30) : rand(33, 46)) * SCALE;
+  const ry = rx * rand(1.08, 1.22);
+  const ci = o.ci !== undefined ? o.ci : Math.random() * COLORS.length | 0;
+  const d = DIFFS[G.diff];
+  const kindF = kind === 'gold' ? .8 : kind === 'bomb' ? .9 : 1;
+  const vy = -(o.speed !== undefined ? o.speed : d.speed * rand(.9, 1.2) * (small ? 1.3 : 1) * kindF) * SCALE;
+  const x = o.x !== undefined ? o.x : rand(W * .12, W * .88);
+  const sy = o.y !== undefined ? o.y : H + 70 + rand(0, 40);
+  return {
+    id: ++uid, kind, ci, rx, ry,
+    x0: x, x, y: sy + G.camY, vy, vy0: vy,
+    w1: rand(0, Math.PI * 2), wf: rand(.7, 1.3), amp: rand(10, 26) * SCALE,
+    tilt: 0, sliced: false, qaPin: !!o.pin, qa: !!o.qa,
+  };
+}
+function spawnCluster() {
+  const d = DIFFS[G.diff];
+  const roll = Math.random();
+  const bombs = G.balloons.filter(b => b.kind === 'bomb').length;
+  if (d.bombChance > 0 && G.elapsed > 2.5 && bombs < d.bombMax && roll < d.bombChance) { G.balloons.push(makeBalloon({ kind: 'bomb' })); return; }
+  const keepChance = .22;
+  const n = roll < .55 ? 1 : roll < .88 ? 2 : 3;
+  const bx = rand(W * .18, W * .82);
+  const baseCi = Math.random() < keepChance ? G.keep : Math.random() * COLORS.length | 0;
+  const ramp = d.noTimer ? lerp(1, 1.55, clamp(G.elapsed / 75, 0, 1)) : 1;
+  const speed = d.speed * rand(.95, 1.12) * ramp;
+  const row = [];
+  for (let i = 0; i < n; i++) {
+    const ci = Math.random() < .68 ? baseCi : (Math.random() < keepChance ? G.keep : Math.random() * COLORS.length | 0);
+    row.push(makeBalloon({ ci, speed, y: H + 70 + rand(-8, 8) }));
+  }
+  const gap = 108 * SCALE;
+  const width = (n - 1) * gap;
+  const startX = clamp(bx - width / 2, 60, Math.max(60, W - 60 - width));
+  row.forEach((b, i) => { b.x0 = startX + i * gap; b.x = b.x0; });
+  const clash = row.some(nb => G.balloons.some(ob =>
+    Math.abs(ob.x - nb.x) < ob.rx + nb.rx + 10 && (ob.y - G.camY) > H - 170));
+  if (clash) row.forEach(b => { b.y += 110 * SCALE; });
+  G.balloons.push(...row);
+}
+function multTier() {
+  const c = G.combo;
+  return c >= 15 ? 4 : c >= 10 ? 3 : c >= 5 ? 2 : 1;
+}
+function mult() {
+  return multTier() * (G.fever > 0 ? 2 : 1);
+}
+function tierCue(hx, wy) {
+  const tier = multTier();
+  if (tier > G.lastTier) {
+    G.lastTier = tier;
+    addFloat(hx, wy - 44, '倍增 ×' + tier, INK, 14, true);
+    AudioEngine.tier();
+  }
+}
+function hitFlash() {
+  if (REDUCED) return;
+  document.body.classList.add('hit');
+  clearTimeout(hitT);
+  hitT = setTimeout(() => document.body.classList.remove('hit'), 150);
+}
+function addFloat(x, y, text, col, size, serif) {
+  G.floats.push({ x, y, text, col, size: Math.max(11, Math.round((size || 16) * SCALE)), serif: !!serif, t: 0 });
+}
+function shake(mag, dur) {
+  if (REDUCED) return;
+  G.shakeMag = Math.max(G.shakeMag, mag); G.shakeDur = Math.max(G.shakeDur, dur); G.shakeT = Math.max(G.shakeT, dur);
+}
+function burst(b, ang) {
+  const col = b.kind === 'gold' ? GOLD.rgb : b.kind === 'ink' ? SLATE.rgb : b.kind === 'bomb' ? INK : COLORS[b.ci].rgb;
+  const n = b.kind === 'bomb' ? 22 : 14;
+  for (let i = 0; i < n && G.confetti.length < 220; i++) {
+    const a = ang + Math.PI / 2 + rand(-1.5, 1.5) + (i % 2 ? Math.PI : 0);
+    const sp = rand(120, 380) * SCALE;
+    G.confetti.push({
+      x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60,
+      rot: rand(0, Math.PI * 2), vr: rand(-8, 8),
+      w: rand(3, 7) * SCALE, h: rand(2, 5) * SCALE,
+      col: Math.random() < .22 ? PAPER : col, t: 0, life: rand(.5, .9), dot: Math.random() < .3,
+    });
+  }
+  G.rings.push({ x: b.x, y: b.y, r: b.rx * .5, sp: 320 * SCALE, a: .6, col });
+  G.splashes.push({ x: b.x, y: b.y, r: b.rx * 2.1, a: b.kind === 'bomb' ? .3 : .2, col });
+}
+function spawnHalves(b, ang) {
+  const spr = b.kind === 'bomb' ? bombSprite() : b.kind === 'ink' ? inkSprite() : balloonSprite(b.kind === 'gold' ? GOLD.rgb : COLORS[b.ci].rgb);
+  const px = Math.cos(ang + Math.PI / 2), py = Math.sin(ang + Math.PI / 2);
+  for (const side of [-1, 1]) {
+    const sp = rand(90, 150) * SCALE;
+    G.halves.push({
+      spr, rx: b.rx, ry: b.ry, cut: ang, side,
+      x: b.x, y: b.y,
+      vx: px * sp * side + rand(-20, 20), vy: py * sp * side - 70,
+      rot: 0, vr: side * rand(1, 2.6), t: 0,
+    });
+  }
+}
+function refreshHud() {
+  scoreEl.textContent = G.score;
+  comboVal.textContent = G.combo;
+  const m = mult();
+  multVal.textContent = '×' + m;
+  multVal.classList.toggle('hot', m > 1);
+  comboBox.classList.toggle('on', G.combo > 0);
+}
+function updateLives() {
+  for (let i = 0; i < lifeDots.children.length; i++)
+    lifeDots.children[i].classList.toggle('off', i >= G.lives);
+}
+function loseLife(x, y) {
+  if (G.phase !== 'play' || !MODE().noTimer) return;
+  G.lives = Math.max(0, G.lives - 1);
+  updateLives();
+  addFloat(x, y, G.lives > 0 ? '息 −1' : '息 尽', SEAL, 22, true);
+  AudioEngine.breath(); shake(4, .3);
+  hitFlash();
+  if (G.lives <= 0) { AudioEngine.gong(); G.endPending = true; }
+}
+function updateWind(dt) {
+  const w = G.wind;
+  w.t -= dt;
+  if (w.t <= 0) {
+    w.t = rand(4.5, 8);
+    const strong = Math.random() < .38;
+    w.to = rand(34, strong ? 108 : 64) * (Math.random() < .5 ? -1 : 1) * SCALE;
+    if (strong && G.phase === 'play') {
+      addFloat(W / 2, H * .3 + G.camY, '风 起', [125, 118, 105], 18, true);
+      AudioEngine.gust();
+    }
+  }
+  w.cur += (w.to - w.cur) * Math.min(1, dt * .6);
+  ambBase = .005 + clamp(Math.abs(w.cur) / (110 * SCALE), 0, 1) * .028;
+  AudioEngine.setAmb(ambBase);
+  for (const s of G.streaks) {
+    s.x += (w.cur * 1.6 + (w.cur >= 0 ? 20 : -20)) * dt * s.sp;
+    if (s.x > W + s.len) s.x = -s.len - rand(0, 120);
+    if (s.x < -s.len - 140) s.x = W + rand(0, 60);
+  }
+}
+
+/* ================= 切割 ================= */
+function segHit(x0, y0, x1, y1, b) {
+  const dx = x1 - x0, dy = y1 - y0;
+  const len2 = dx * dx + dy * dy;
+  let t = len2 > 0 ? ((b.x - x0) * dx + (b.y - G.camY - y0) * dy) / len2 : 0;
+  t = clamp(t, 0, 1);
+  const cx = x0 + dx * t, cy = y0 + dy * t;
+  const r = Math.max(b.rx, b.ry) * .95;
+  const ddx = cx - b.x, ddy = cy - (b.y - G.camY);
+  return ddx * ddx + ddy * ddy <= r * r ? { x: cx, y: cy } : null;
+}
+function sliceBalloon(b, ang, hx, hy) {
+  if (b.sliced) return;
+  b.sliced = true;
+  const wy = hy + G.camY;
+  const m = MODE();
+  G.stats.total++;
+  spawnHalves(b, ang);
+  burst(b, ang);
+  G.cuts.push({ x: hx, y: wy, ang, t: 0, r: Math.max(b.rx, b.ry), col: b.kind === 'gold' ? GOLD.rgb : b.kind === 'ink' ? [58, 95, 168] : INK });
+  ptr.stroke++; ptr.lastSlice = gTime; ptr.sx = hx; ptr.sy = hy;
+  playHint.classList.remove('show');
+  if (b.kind === 'bomb') {
+    G.stats.bad++;
+    G.score -= 3; G.combo = 0; G.comboT = 0; G.lastTier = 1; ptr.stroke = 0;
+    addFloat(hx, wy - 14, '墨雷 −3', SEAL, 20, true);
+    AudioEngine.bomb(); shake(7, .35); G.freeze = Math.max(G.freeze, .05);
+    hitFlash();
+    if (m.noTimer) loseLife(hx, wy - 44);
+  } else if (b.kind === 'gold') {
+    G.stats.good++;
+    G.combo++; G.comboT = CFG.comboWindow;
+    G.stats.maxCombo = Math.max(G.stats.maxCombo, G.combo);
+    if (m.noTimer) {
+      if (G.lives < 3) { G.lives++; updateLives(); addFloat(hx, wy - 14, '息 +1', GOLD.rgb, 22, true); }
+      else { G.score += 4; addFloat(hx, wy - 14, '+4', GOLD.rgb, 20, true); }
+    } else {
+      G.score += 2;
+      const add = Math.min(2, CFG.timeCap - G.timeAdded);
+      if (add > 0 && G.phase === 'play') { G.time += add; G.timeAdded += add; addFloat(hx, wy - 14, '+' + add + ' 秒', GOLD.rgb, 22, true); }
+      else addFloat(hx, wy - 14, '+2', GOLD.rgb, 18, true);
+    }
+    AudioEngine.gold(); G.freeze = Math.max(G.freeze, .04);
+    tierCue(hx, wy);
+    if (G.combo >= m.feverAt && G.fever <= 0) startFever();
+  } else if (b.kind === 'ink') {
+    G.stats.good++;
+    G.combo++; G.comboT = CFG.comboWindow;
+    G.stats.maxCombo = Math.max(G.stats.maxCombo, G.combo);
+    G.score += 1;
+    G.slow = CFG.slowDur;
+    document.body.classList.add('slow');
+    addFloat(hx, wy - 14, '涟 · 缓', SLATE.rgb, 20, true);
+    G.rings.push({ x: b.x, y: b.y, r: b.rx * .4, sp: 190 * SCALE, a: .5, col: [58, 95, 168] });
+    G.rings.push({ x: b.x, y: b.y, r: b.rx * .2, sp: 130 * SCALE, a: .4, col: [58, 95, 168] });
+    AudioEngine.slowmo(); G.freeze = Math.max(G.freeze, .04);
+    tierCue(hx, wy);
+    if (G.combo >= m.feverAt && G.fever <= 0) startFever();
+  } else if (b.ci === G.keep) {
+    G.stats.bad++;
+    const zen = G.diff === 'zen';
+    if (!zen) G.score -= 1;
+    G.combo = 0; G.comboT = 0; G.lastTier = 1; ptr.stroke = 0;
+    addFloat(hx, wy - 14, zen ? '误' : '误 −1', SEAL, 18, true);
+    G.rings.push({ x: b.x, y: b.y, r: b.rx * .6, sp: 260 * SCALE, a: .7, col: SEAL });
+    AudioEngine.wrong(); shake(2.5, .14);
+    hitFlash();
+    if (m.noTimer) loseLife(hx, wy - 44);
+  } else {
+    G.stats.good++;
+    G.combo++; G.comboT = CFG.comboWindow;
+    G.stats.maxCombo = Math.max(G.stats.maxCombo, G.combo);
+    if (G.combo >= m.feverAt && G.fever <= 0) startFever();
+    const gain = mult();
+    G.score += gain;
+    addFloat(hx, wy - 14, '+' + gain, G.fever > 0 ? GOLD.rgb : INK, gain > 1 ? 19 : 16, gain > 1);
+    AudioEngine.slice(G.combo);
+    G.freeze = Math.max(G.freeze, .028); shake(1.4, .08);
+    tierCue(hx, wy);
+  }
+  refreshHud();
+}
+function finalizeStroke() {
+  if (ptr.stroke >= 2) {
+    const n = ptr.stroke, bonus = 2 * (n - 1);
+    G.score += bonus;
+    G.stats.bestStroke = Math.max(G.stats.bestStroke, n);
+    addFloat(ptr.sx, ptr.sy + G.camY - 40, n + ' 连斩 +' + bonus, SEAL, 23, true);
+    AudioEngine.flourish();
+    refreshHud();
+  }
+  ptr.stroke = 0;
+}
+function sliceSegment(x0, y0, x1, y1) {
+  const dx = x1 - x0, dy = y1 - y0;
+  if (dx * dx + dy * dy < 4) return false;
+  const ang = Math.atan2(dy, dx);
+  let hitAny = false;
+  for (const b of G.balloons) {
+    if (b.sliced) continue;
+    const hit = segHit(x0, y0, x1, y1, b);
+    if (hit) { sliceBalloon(b, ang, hit.x, hit.y); hitAny = true; }
+  }
+  return hitAny;
+}
+function startFever() {
+  G.fever = CFG.feverDur;
+  document.body.classList.add('fever');
+  AudioEngine.fever();
+  addFloat(W / 2, H * .36 + G.camY, '心 流 · 倍 增', GOLD.rgb, 26, true);
+}
+function endFever(soft) {
+  const was = G.fever > 0;
+  G.fever = 0;
+  document.body.classList.remove('fever');
+  if (soft && was) AudioEngine.feverEnd();
+}
+
+/* ================= 输入 ================= */
+function uiTarget(e) {
+  return e.target instanceof Element && e.target.closest('button,input,a,.overlay,#signBar,#signPop');
+}
+let lastWhoosh = 0;
+window.addEventListener('pointerdown', e => {
+  AudioEngine.ensure();
+  if (uiTarget(e)) return;
+  if (G.paused) return;
+  ptr.seen = true; ptr.x = e.clientX; ptr.y = e.clientY; ptr.px = e.clientX; ptr.py = e.clientY;
+  if (G.phase !== 'play' && G.phase !== 'sweep') return;
+  ptr.down = true; finalizeStroke();
+});
+window.addEventListener('pointermove', e => {
+  if (uiTarget(e)) { ptr.seen = false; return; }
+  if (G.paused) return;
+  const x = e.clientX, y = e.clientY;
+  if (!ptr.seen) { finalizeStroke(); ptr.seen = true; ptr.px = x; ptr.py = y; }
+  else { ptr.px = ptr.x; ptr.py = ptr.y; }
+  ptr.x = x; ptr.y = y;
+  if (G.phase !== 'play' && G.phase !== 'sweep') return;
+  trail.push({ x, y, t: gTime });
+  if (trail.length > 48) trail.shift();
+  const hitAny = sliceSegment(ptr.px, ptr.py, x, y);
+  const sp = Math.hypot(x - ptr.px, y - ptr.py);
+  const now = performance.now();
+  if (hitAny && sp > 40 && now - lastWhoosh > 120) { lastWhoosh = now; AudioEngine.whoosh(); }
+});
+document.addEventListener('pointerleave', () => { ptr.seen = false; });
+function releasePointer() { if (ptr.down && !G.paused) finalizeStroke(); ptr.down = false; }
+window.addEventListener('pointerup', releasePointer);
+window.addEventListener('pointercancel', releasePointer);
+window.addEventListener('blur', releasePointer);
+
+/* ================= 流程 ================= */
+function startRound(modeKey) {
+  const mk = (modeKey && DIFFS[modeKey]) ? modeKey : selMode;
+  G.diff = mk;
+  const df = DIFFS[mk];
+  G.phase = 'play';
+  G.time = df.noTimer ? 0 : df.time; G.score = 0; G.combo = 0; G.comboT = 0; G.fever = 0;
+  G.keep = Math.random() * COLORS.length | 0;
+  G.lives = df.lives || 3; G.slow = 0; G.endPending = false;
+  G.wind = { cur: 0, to: 0, t: rand(2.5, 4.5) };
+  G.streaks = [];
+  if (df.wind) for (let i = 0; i < 7; i++) G.streaks.push({ x: rand(0, W), y: rand(H * .12, H * .9), len: rand(70, 190) * SCALE, sp: rand(1.1, 1.9), a: rand(.5, 1) });
+  G.sweepT = 0; G.ascendT = 0; G.elapsed = 0; G.spawnT = .15;
+  G.goldT = rand(6, 9); G.inkT = rand(8, 13);
+  G.timeAdded = 0; G.lastWhole = 99; G.freeze = 0; G.shakeT = 0; G.noSpawn = false; G.paused = false;
+  G.stats = { total: 0, good: 0, bad: 0, missed: 0, kept: 0, maxCombo: 0, bestStroke: 0 };
+  G.balloons = []; G.halves = []; G.confetti = []; G.rings = []; G.splashes = []; G.floats = []; G.cuts = [];
+  G.shelf = []; G.missedLog = []; G.keptLog = [];
+  G.lastTier = 1;
+  G.camY = Math.max(520, H * 1.02); G.camTo = G.camY;
+  trail.length = 0; ptr.stroke = 0; ptr.down = false; ptr.seen = false;
+  endFever();
+  document.body.classList.remove('slow');
+  document.body.classList.add('playing');
+  document.body.classList.remove('sweeping');
+  titleScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  pauseScreen.classList.add('hidden');
+  sweepHint.classList.remove('show');
+  playHint.classList.add('show');
+  keepSwatch.style.background = COLORS[G.keep].css;
+  keepName.textContent = COLORS[G.keep].name;
+  timeBox.style.display = df.noTimer ? 'none' : 'block';
+  lifeBox.style.display = df.noTimer ? 'block' : 'none';
+  if (df.noTimer) updateLives();
+  else {
+    timeEl.textContent = df.time.toFixed(2);
+    timeEl.classList.remove('danger', 'critical');
+    timeBar.style.width = '100%';
+  }
+  refreshHud();
+  for (let i = 0; i < 4; i++) G.balloons.push(makeBalloon({ y: H + 90 + i * 70 }));
+  AudioEngine.ensure(); AudioEngine.startAmb(); AudioEngine.setAmb(ambBase); AudioEngine.click();
+}
+function startSweep() {
+  G.phase = 'sweep'; G.sweepT = 0; G.time = 0;
+  timeEl.textContent = '0.00';
+  timeEl.classList.remove('danger', 'critical');
+  timeBar.style.width = '0%';
+  sweepHint.classList.add('show');
+  playHint.classList.remove('show');
+  document.body.classList.add('sweeping');
+  AudioEngine.sweep();
+}
+function endRound() {
+  finalizeStroke();
+  G.slow = 0; document.body.classList.remove('slow');
+  AudioEngine.stopAmb();
+  sweepHint.classList.remove('show');
+  document.body.classList.remove('sweeping');
+  for (const b of G.balloons) {
+    if (b.kind !== 'normal') continue;
+    if (b.ci === G.keep) { G.stats.kept++; G.keptLog.push(b.ci); }
+    else { G.stats.missed++; G.missedLog.push(b.ci); }
+  }
+  const dock = G.balloons.filter(b => b.kind === 'normal');
+  const shelfN = Math.min(dock.length + G.missedLog.length + G.keptLog.length, 16);
+  G.shelf = [];
+  let slot = 0;
+  const slotW = W * .84 / Math.max(shelfN, 1);
+  const srx = Math.min(24 * SCALE, slotW * .34);
+  const place = (ci, mode) => {
+    if (slot >= shelfN) return;
+    const fx = (slot + .5) / shelfN;
+    G.shelf.push({ ci, mode, x: W * (.08 + .84 * fx) + rand(-4, 4), y: 168 + rand(-8, 8), rx: srx, ry: srx * 1.15, w1: rand(0, 6) });
+    slot++;
+  };
+  dock.forEach(b => place(b.ci, b.ci === G.keep ? 'keep' : 'miss'));
+  G.keptLog.forEach(ci => place(ci, 'keep'));
+  G.missedLog.forEach(ci => place(ci, 'miss'));
+  G.balloons = [];
+  G.phase = 'ascend'; G.ascendT = 0; G.camTo = -52;
+  AudioEngine.sweep();
+}
+function showResult() {
+  G.phase = 'result';
+  document.body.classList.remove('playing');
+  endFever(true);
+  const s = G.stats;
+  const df = DIFFS[G.diff];
+  $('rDiff').textContent = df.label + ' · ' + df.note;
+  $('rScore').textContent = G.score;
+  $('rTotal').textContent = s.total;
+  $('rGood').textContent = s.good;
+  $('rBad').textContent = s.bad;
+  $('rMiss').textContent = s.missed;
+  $('rKeep').textContent = s.kept;
+  $('rCombo').textContent = '最高连斩 ' + s.maxCombo;
+  $('rStroke').textContent = '一刀 ' + s.bestStroke + ' 连';
+  $('rTime').textContent = df.noTimer ? '历时 ' + Math.round(G.elapsed) + ' 秒' : '加时 ' + G.timeAdded + ' 秒';
+  const RANKS = {
+    classic: [[70, 'S', '行云流水'], [45, 'A', '游刃有余'], [25, 'B', '渐入佳境'], [10, 'C', '小试牛刀'], [0, 'D', '再接再厉']],
+    zen: [[160, 'S', '行云流水'], [110, 'A', '游刃有余'], [65, 'B', '渐入佳境'], [30, 'C', '小试牛刀'], [0, 'D', '再接再厉']],
+    gale: [[180, 'S', '风樯阵马'], [120, 'A', '游刃有余'], [70, 'B', '渐入佳境'], [30, 'C', '小试牛刀'], [0, 'D', '再接再厉']],
+  };
+  const rank = (RANKS[G.diff] || RANKS.classic).find(r => G.score >= r[0]) || RANKS.classic[4];
+  $('rRank').textContent = rank[1];
+  $('rRankName').textContent = rank[2];
+  const prev = getBest(G.diff);
+  const isNew = G.score > prev;
+  if (isNew) store.set('paper.best.' + G.diff, String(G.score));
+  $('recordLine').textContent = isNew ? '新 纪 录' : (prev > 0 ? '历来最佳 ' + prev : '');
+  resultScreen.classList.remove('hidden');
+  refreshMeta();
+  AudioEngine.result();
+  if (isNew && G.score > 0) AudioEngine.record();
+}
+function backToTitle() {
+  G.phase = 'title';
+  G.paused = false; G.slow = 0;
+  document.body.classList.remove('playing', 'sweeping', 'fever', 'slow');
+  pauseScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  titleScreen.classList.remove('hidden');
+  sweepHint.classList.remove('show');
+  playHint.classList.remove('show');
+  timeBox.style.display = 'block';
+  lifeBox.style.display = 'none';
+  G.balloons = []; G.halves = []; G.confetti = []; G.rings = []; G.splashes = []; G.floats = []; G.shelf = []; G.streaks = []; G.cuts = [];
+  G.camY = Math.max(520, H * 1.02); G.camTo = G.camY;
+  AudioEngine.stopAmb();
+  seedTitle();
+  refreshMeta();
+}
+function seedTitle() {
+  G.balloons = [];
+  for (let i = 0; i < 9; i++) {
+    const x = Math.random() < .5 ? rand(W * .05, W * .26) : rand(W * .74, W * .95);
+    const b = makeBalloon({ x, y: rand(H * .08, H * 1.05) });
+    b.vy = -rand(14, 26) * SCALE; b.vy0 = b.vy; b.amp = rand(6, 14) * SCALE;
+    G.balloons.push(b);
+  }
+}
+
+/* ================= 更新 ================= */
+function moveBalloon(b, wdt, ramp) {
+  if (b.qaPin) return;
+  b.y += b.vy * ramp * wdt;
+  if (MODE().wind) b.x0 = clamp(b.x0 + G.wind.cur * ramp * wdt, 26, W - 26);
+  b.x = b.x0 + Math.sin(gTime * b.wf + b.w1) * b.amp;
+  b.tilt = Math.sin(gTime * b.wf * .8 + b.w1) * .07;
+}
+function update(dt) {
+  gTime += dt;
+  if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) { G.combo = 0; G.lastTier = 1; refreshHud(); } }
+  comboBar.style.width = (G.combo > 0 ? clamp(G.comboT / CFG.comboWindow, 0, 1) * 100 : 0) + '%';
+  if (G.fever > 0) { G.fever -= dt; if (G.fever <= 0) endFever(true); }
+  if (ptr.stroke > 0 && gTime - ptr.lastSlice > .15) finalizeStroke();
+
+  const df = DIFFS[G.diff];
+  if (G.phase === 'play') {
+    G.elapsed += dt;
+    if (!df.noTimer) {
+      G.time -= dt;
+      if (G.time <= 0) { G.time = 0; startSweep(); }
+      else {
+        timeEl.textContent = G.time.toFixed(2);
+        timeBar.style.width = clamp(G.time / df.time, 0, 1) * 100 + '%';
+        const whole = Math.ceil(G.time);
+        if (whole !== G.lastWhole) {
+          G.lastWhole = whole;
+          if (whole <= 5) { timeEl.classList.add('danger'); AudioEngine.tick(); }
+          if (whole <= 3) timeEl.classList.add('critical');
+        }
+      }
+    }
+    G.spawnT -= dt;
+    if (G.spawnT <= 0 && !G.noSpawn) {
+      const prog = df.noTimer ? clamp(G.elapsed / 55, 0, .8) : clamp(G.elapsed / df.time, 0, 1);
+      G.spawnT = df.interval * lerp(1, df.noTimer ? .42 : .55, prog) * rand(.8, 1.2);
+      if (G.balloons.length < 26) spawnCluster();
+    }
+    G.goldT -= dt;
+    if (G.goldT <= 0 && !G.noSpawn) {
+      G.goldT = rand(7, 10);
+      if (!G.balloons.some(b => b.kind === 'gold')) G.balloons.push(makeBalloon({ kind: 'gold' }));
+    }
+    G.inkT -= dt;
+    if (G.inkT <= 0 && !G.noSpawn) {
+      G.inkT = rand(11, 16);
+      if (!G.balloons.some(b => b.kind === 'ink') && G.slow <= 0) G.balloons.push(makeBalloon({ kind: 'ink' }));
+    }
+    if (df.wind) updateWind(dt);
+  } else if (G.phase === 'sweep') {
+    G.sweepT += dt;
+    if (df.wind) updateWind(dt);
+  } else if (G.phase === 'ascend') {
+    G.ascendT += dt;
+    G.camY += (G.camTo - G.camY) * Math.min(1, dt * 3);
+    if (G.ascendT > 1.15 && Math.abs(G.camY - G.camTo) < 3) showResult();
+  } else if (G.phase === 'title') {
+    for (const b of G.balloons) {
+      b.y += b.vy * dt;
+      b.x = b.x0 + Math.sin(gTime * b.wf + b.w1) * b.amp;
+      if (b.y - G.camY < -90) {
+        b.y = G.camY + H + 80;
+        b.x0 = Math.random() < .5 ? rand(W * .05, W * .26) : rand(W * .74, W * .95);
+      }
+    }
+  }
+
+  if (G.phase === 'play' || G.phase === 'sweep') {
+    const ramp = G.phase === 'sweep' ? 1 + 2.8 * Math.min(1, G.sweepT / .7) : 1;
+    for (const b of G.balloons) {
+      if (b.sliced) continue;
+      if (G.phase !== 'play' && G.phase !== 'sweep') break;
+      moveBalloon(b, dt, ramp);
+      const sy = b.y - G.camY;
+      if (sy + b.ry < -70) {
+        b.sliced = true;
+        if (b.kind === 'normal') {
+          if (b.ci === G.keep) { G.stats.kept++; G.keptLog.push(b.ci); }
+          else {
+            G.stats.missed++; G.missedLog.push(b.ci);
+            if (MODE().noTimer && G.phase === 'play') loseLife(b.x, 60);
+          }
+        }
+      }
+    }
+    G.balloons = G.balloons.filter(b => !b.sliced);
+    const bs = G.balloons;
+    for (let i = 0; i < bs.length; i++) {
+      const a = bs[i];
+      if (a.qaPin) continue;
+      for (let j = i + 1; j < bs.length; j++) {
+        const b = bs[j];
+        if (b.qaPin) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const Rx = (a.rx + b.rx) * 1.06 + 4 * SCALE, Ry = (a.ry + b.ry) * 1.06 + 4 * SCALE;
+        const nx = dx / Rx, ny = dy / Ry;
+        const q = nx * nx + ny * ny;
+        if (q < 1 && q > 1e-6) {
+          const d = Math.sqrt(q);
+          const push = (1 - d) * .25;
+          const ux = nx / d, uy = ny / d;
+          a.x0 = clamp(a.x0 - ux * push * Rx, 40, W - 40); a.y -= uy * push * Ry;
+          b.x0 = clamp(b.x0 + ux * push * Rx, 40, W - 40); b.y += uy * push * Ry;
+        }
+      }
+    }
+    if (G.phase === 'play' && G.endPending) { G.endPending = false; endRound(); }
+    if (G.phase === 'sweep' && (G.balloons.length === 0 || G.sweepT > CFG.sweepMax)) endRound();
+  }
+
+  for (const h of G.halves) {
+    h.t += dt;
+    h.vy += 1000 * SCALE * dt;
+    h.x += h.vx * dt; h.y += h.vy * dt;
+    h.rot += h.vr * dt;
+  }
+  G.halves = G.halves.filter(h => h.t < 1.15 && h.y - G.camY < H + 160);
+  for (const c of G.confetti) {
+    c.t += dt;
+    c.vy += 520 * SCALE * dt;
+    c.vx *= .99; c.vy *= .995;
+    c.x += c.vx * dt; c.y += c.vy * dt;
+    c.rot += c.vr * dt;
+  }
+  G.confetti = G.confetti.filter(c => c.t < c.life);
+  for (const r of G.rings) { r.r += r.sp * dt; r.a -= 1.9 * dt; }
+  G.rings = G.rings.filter(r => r.a > 0);
+  for (const s of G.splashes) s.a -= .55 * dt;
+  G.splashes = G.splashes.filter(s => s.a > 0);
+  for (const f of G.floats) { f.t += dt; f.y -= 36 * dt; }
+  G.floats = G.floats.filter(f => f.t < .85);
+  for (const c of G.cuts) c.t += dt;
+  G.cuts = G.cuts.filter(c => c.t < .24);
+  while (trail.length && gTime - trail[0].t > .16) trail.shift();
+}
+
+/* ================= 绘制 ================= */
+function drawBalloonBody(b, alpha) {
+  const sy = b.y - G.camY;
+  const col = b.kind === 'gold' ? GOLD.rgb : b.kind === 'ink' ? SLATE.rgb : COLORS[b.ci].rgb;
+  const spr = b.kind === 'bomb' ? bombSprite() : b.kind === 'ink' ? inkSprite() : balloonSprite(col);
+  ctx.save();
+  ctx.translate(b.x, sy);
+  ctx.rotate(b.tilt || 0);
+  ctx.globalAlpha = alpha;
+  // 纸线
+  if (b.kind === 'normal' || b.kind === 'gold') {
+    ctx.strokeStyle = rgba(INK, .28 * alpha);
+    ctx.lineWidth = 1;
+    const sl = b.ry * 1.7;
+    const sw = Math.sin(gTime * 1.4 + b.w1) * 8 * SCALE;
+    ctx.beginPath();
+    ctx.moveTo(0, b.ry * 1.06);
+    ctx.quadraticCurveTo(sw, b.ry * 1.06 + sl * .55, sw * .4, b.ry * 1.06 + sl);
+    ctx.stroke();
+  }
+  const sxr = b.rx / 100, syr = b.ry / 112;
+  ctx.drawImage(spr, -128 * sxr, -118 * syr, 256 * sxr, 256 * syr);
+  if (b.kind === 'normal' && b.ci === G.keep && G.phase !== 'title') {
+    ctx.fillStyle = rgba(PAPER, .95);
+    ctx.beginPath(); ctx.arc(b.rx * .62, -b.ry * .62, 9 * SCALE, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = rgba(INK, .25); ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = rgba(INK, .85);
+    ctx.font = `${Math.round(10 * SCALE)}px Georgia,"Songti SC","SimSun",serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('留', b.rx * .62, -b.ry * .62 + 1);
+  }
+  if (b.kind === 'bomb') {
+    const pulse = .5 + .5 * Math.sin(gTime * 5 + b.w1);
+    ctx.strokeStyle = rgba(SEAL, .35 + .3 * pulse);
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.ellipse(0, 0, b.rx + 7, b.ry + 7, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if (b.kind === 'ink') {
+    const tw = .5 + .5 * Math.sin(gTime * 3 + b.w1);
+    ctx.strokeStyle = rgba([58, 95, 168], .22 + .22 * tw);
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 6]);
+    ctx.beginPath(); ctx.ellipse(0, 0, b.rx + 8 + tw * 2, b.ry + 8 + tw * 2, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if (b.kind === 'gold') {
+    ctx.strokeStyle = rgba(PAPER, .85);
+    ctx.lineWidth = Math.max(1.4, b.rx * .07);
+    ctx.beginPath(); ctx.arc(0, 0, b.rx * .44, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(0, -b.rx * .3);
+    ctx.moveTo(0, 0); ctx.lineTo(b.rx * .2, b.rx * .08);
+    ctx.stroke();
+    const tw = .5 + .5 * Math.sin(gTime * 4 + b.w1);
+    ctx.strokeStyle = rgba(GOLD.rgb, .5 * tw);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.ellipse(0, 0, b.rx + 6 + tw * 3, b.ry + 6 + tw * 3, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawShelf() {
+  const sy = 118 - G.camY;
+  if (sy < -60 || sy > H) return;
+  ctx.strokeStyle = rgba(INK, .3);
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W * .06, sy); ctx.lineTo(W * .94, sy); ctx.stroke();
+  ctx.fillStyle = rgba(INK, .45);
+  ctx.font = '10px "Microsoft YaHei","PingFang SC",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('回 收 架', W * .5, sy - 10);
+  ctx.strokeStyle = rgba(INK, .3);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W * .5 - 70, sy - 14); ctx.lineTo(W * .5 - 34, sy - 14);
+  ctx.moveTo(W * .5 + 34, sy - 14); ctx.lineTo(W * .5 + 70, sy - 14);
+  ctx.stroke();
+  for (const s of G.shelf) {
+    const yy = s.y - G.camY;
+    const sway = Math.sin(gTime * .9 + s.w1) * 3;
+    ctx.save();
+    ctx.translate(s.x + sway, yy);
+    ctx.strokeStyle = rgba(INK, .25); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, -s.ry); ctx.lineTo(-sway, sy - yy); ctx.stroke();
+    const spr = balloonSprite(COLORS[s.ci].rgb);
+    const sxr = s.rx / 100, syr = s.ry / 112;
+    if (s.mode === 'miss') {
+      ctx.globalAlpha = .38;
+      ctx.drawImage(spr, -128 * sxr, -118 * syr, 256 * sxr, 256 * syr);
+      ctx.globalAlpha = .8;
+      ctx.strokeStyle = rgba(INK, .5);
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.ellipse(0, 0, s.rx + 4, s.ry + 4, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.drawImage(spr, -128 * sxr, -118 * syr, 256 * sxr, 256 * syr);
+      ctx.strokeStyle = rgba(PAPER, .95); ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.ellipse(0, 0, s.rx + 5, s.ry + 5, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = rgba(INK, .18); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(0, 0, s.rx + 8, s.ry + 8, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+function drawHalves() {
+  for (const h of G.halves) {
+    const a = h.t < .7 ? 1 : clamp(1 - (h.t - .7) / .45, 0, 1);
+    const R = Math.max(h.rx, h.ry) * 1.6;
+    ctx.save();
+    ctx.translate(h.x, h.y - G.camY);
+    ctx.rotate(h.rot);
+    ctx.globalAlpha = a;
+    ctx.save();
+    ctx.rotate(h.cut);
+    ctx.beginPath();
+    ctx.rect(-R, h.side > 0 ? 0 : -R, R * 2, R);
+    ctx.clip();
+    ctx.rotate(-h.cut);
+    const sxr = h.rx / 100, syr = h.ry / 112;
+    ctx.drawImage(h.spr, -128 * sxr, -118 * syr, 256 * sxr, 256 * syr);
+    ctx.rotate(h.cut);
+    ctx.strokeStyle = rgba(PAPER, .95);
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-h.rx, h.side * 1.2); ctx.lineTo(h.rx, h.side * 1.2); ctx.stroke();
+    ctx.restore();
+    ctx.restore();
+  }
+}
+function drawTrail() {
+  const n = trail.length;
+  if (n < 2) return;
+  const col = G.fever > 0 ? SEAL : INK;
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const p = trail[i];
+    const k = clamp(1 - (gTime - p.t) / .16, 0, 1);
+    if (k <= 0) continue;
+    const taper = Math.pow(Math.sin(Math.PI * clamp(i / (n - 1), 0, 1)), .65);
+    pts.push({ x: p.x, y: p.y, w: (1.5 + 8.5 * taper) * k });
+  }
+  if (pts.length < 2) return;
+  const ribbon = (ws, alpha) => {
+    const left = [], right = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy) || 1;
+      dx /= d; dy /= d;
+      const w = pts[i].w * ws;
+      left.push({ x: pts[i].x - dy * w, y: pts[i].y + dx * w });
+      right.push({ x: pts[i].x + dy * w, y: pts[i].y - dx * w });
+    }
+    ctx.beginPath();
+    ctx.moveTo(left[0].x, left[0].y);
+    for (const p of left) ctx.lineTo(p.x, p.y);
+    for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i].x, right[i].y);
+    ctx.closePath();
+    ctx.fillStyle = rgba(col, alpha);
+    ctx.fill();
+  };
+  ctx.save();
+  ribbon(1, .13);
+  ribbon(.42, .62);
+  const tip = trail[n - 1];
+  const tk = clamp(1 - (gTime - tip.t) / .16, 0, 1);
+  if (tk > 0) {
+    ctx.fillStyle = rgba(col, .75 * tk);
+    ctx.beginPath(); ctx.arc(tip.x, tip.y, 2.4, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function render() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#f4f0e6';
+  ctx.fillRect(0, 0, W, H);
+  if (!grainPattern) grainPattern = ctx.createPattern(grainTile, 'repeat');
+  ctx.fillStyle = grainPattern;
+  ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(W / 2, H * 1.05, 0, W / 2, H * 1.05, Math.max(W, H) * .7);
+  glow.addColorStop(0, G.fever > 0 ? 'rgba(192,138,42,.09)' : 'rgba(192,138,42,.05)');
+  glow.addColorStop(1, 'rgba(192,138,42,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  if (G.shakeT > 0) {
+    const k = G.shakeMag * Math.pow(G.shakeT / G.shakeDur, 2);
+    const ph = performance.now() * .09;
+    ctx.translate(Math.sin(ph) * k, Math.cos(ph * 1.13 + 1.7) * k * .7);
+  }
+  if (G.phase === 'ascend' || G.phase === 'result') drawShelf();
+  if (DIFFS[G.diff].wind && G.streaks.length) {
+    const wa = clamp(Math.abs(G.wind.cur) / (70 * SCALE), 0, 1);
+    if (wa > .05) {
+      ctx.lineWidth = 1;
+      for (const s of G.streaks) {
+        ctx.strokeStyle = rgba(INK, .11 * wa * s.a);
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.quadraticCurveTo(s.x + s.len * .5, s.y - 4, s.x + s.len, s.y);
+        ctx.stroke();
+      }
+    }
+  }
+  const ambient = G.phase === 'title' ? .5 : 1;
+  for (const b of G.balloons) drawBalloonBody(b, ambient);
+  for (const s of G.splashes) {
+    ctx.globalAlpha = s.a;
+    ctx.drawImage(glowSprite(s.col), s.x - s.r, s.y - G.camY - s.r, s.r * 2, s.r * 2);
+    ctx.globalAlpha = 1;
+  }
+  for (const c of G.cuts) {
+    const k = 1 - c.t / .24;
+    const L = c.r * (.5 + c.t * 7);
+    ctx.strokeStyle = rgba(c.col, .45 * k);
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(c.x - Math.cos(c.ang) * L, c.y - G.camY - Math.sin(c.ang) * L);
+    ctx.lineTo(c.x + Math.cos(c.ang) * L, c.y - G.camY + Math.sin(c.ang) * L);
+    ctx.stroke();
+  }
+  drawHalves();
+  for (const c of G.confetti) {
+    const a = clamp(1 - c.t / c.life, 0, 1);
+    ctx.save();
+    ctx.translate(c.x, c.y - G.camY);
+    ctx.rotate(c.rot);
+    ctx.fillStyle = rgba(c.col, a * .9);
+    if (c.dot) { ctx.beginPath(); ctx.arc(0, 0, c.w * .4, 0, Math.PI * 2); ctx.fill(); }
+    else ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+    ctx.restore();
+  }
+  for (const r of G.rings) {
+    ctx.strokeStyle = rgba(r.col, r.a);
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.ellipse(r.x, r.y - G.camY, r.r, r.r * .94, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const f of G.floats) {
+    const a = clamp(1 - f.t / .85, 0, 1);
+    ctx.font = `${f.serif ? '400' : '300'} ${f.size}px ${f.serif ? 'Georgia,"Songti SC","SimSun",serif' : '"Segoe UI","Microsoft YaHei",sans-serif'}`;
+    ctx.fillStyle = rgba(f.col, a);
+    ctx.fillText(f.text, f.x, f.y - G.camY);
+  }
+  ctx.restore();
+
+  drawTrail();
+  if (ptr.seen && (G.phase === 'play' || G.phase === 'sweep')) {
+    const tip = trail[trail.length - 1];
+    if (!tip || gTime - tip.t > .12) {
+      ctx.strokeStyle = rgba(INK, .3);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(ptr.x, ptr.y, 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = rgba(INK, .55);
+      ctx.beginPath(); ctx.arc(ptr.x, ptr.y, 1.8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+/* ================= 主循环 ================= */
+let lastT = performance.now();
+function frame(ts) {
+  const rawDt = Math.min((ts - lastT) / 1000, .05);
+  lastT = ts;
+  if (G.paused) { render(); requestAnimationFrame(frame); return; }
+  if (G.shakeT > 0) { G.shakeT -= rawDt; if (G.shakeT <= 0) { G.shakeT = 0; G.shakeMag = 0; } }
+  if (G.slow > 0) { G.slow -= rawDt; if (G.slow <= 0) { G.slow = 0; document.body.classList.remove('slow'); } }
+  let dt = rawDt;
+  if (G.slow > 0) dt *= CFG.slowScale;
+  if (G.freeze > 0) { G.freeze -= rawDt; dt = 0; }
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ================= UI 事件 ================= */
+function setPaused(p) {
+  if (p) {
+    if (G.paused || (G.phase !== 'play' && G.phase !== 'sweep')) return;
+    G.paused = true;
+    pauseScreen.classList.remove('hidden');
+    document.body.classList.remove('playing');
+    AudioEngine.setAmb(0);
+    AudioEngine.click();
+  } else {
+    if (!G.paused) return;
+    G.paused = false;
+    pauseScreen.classList.add('hidden');
+    document.body.classList.add('playing');
+    AudioEngine.setAmb(ambBase);
+    AudioEngine.click();
+  }
+}
+$('startBtn').addEventListener('click', () => startRound());
+$('againBtn').addEventListener('click', () => startRound());
+$('backBtn').addEventListener('click', () => { AudioEngine.click(); backToTitle(); });
+modeBtns.forEach(btn => btn.addEventListener('click', () => {
+  if (selMode === btn.dataset.mode) return;
+  selMode = btn.dataset.mode;
+  store.set('paper.mode', selMode);
+  AudioEngine.ensure(); AudioEngine.click();
+  refreshModeUI(); refreshMeta();
+}));
+$('pauseBtn').addEventListener('click', () => setPaused(true));
+$('resumeBtn').addEventListener('click', () => setPaused(false));
+$('quitBtn').addEventListener('click', () => { setPaused(false); backToTitle(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.repeat) setPaused(!G.paused); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+$('muteBtn').addEventListener('click', () => {
+  AudioEngine.ensure();
+  AudioEngine.setMuted(!AudioEngine.muted);
+  store.set('paper.muted', AudioEngine.muted ? '1' : '0');
+  refreshMuteIcon();
+  if (!AudioEngine.muted) AudioEngine.click();
+});
+function refreshFsIcon() {
+  const fs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  $('icoFsOn').style.display = fs ? 'block' : 'none';
+  $('icoFsOff').style.display = fs ? 'none' : 'block';
+}
+$('fsBtn').addEventListener('click', () => {
+  AudioEngine.ensure(); AudioEngine.click();
+  try {
+    const d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) {
+      const r = d.exitFullscreen ? d.exitFullscreen() : d.webkitExitFullscreen && d.webkitExitFullscreen();
+      if (r && r.catch) r.catch(() => {});
+    } else {
+      const r = el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen && el.webkitRequestFullscreen();
+      if (r && r.catch) r.catch(() => {});
+    }
+  } catch (e) {}
+});
+document.addEventListener('fullscreenchange', refreshFsIcon);
+document.addEventListener('webkitfullscreenchange', refreshFsIcon);
+$('signBtn').addEventListener('click', () => {
+  AudioEngine.ensure(); AudioEngine.click();
+  signInput.value = store.get('paper.sign', '');
+  signPop.classList.remove('hidden');
+  setTimeout(() => signInput.focus(), 30);
+});
+function closeSign() { signPop.classList.add('hidden'); }
+$('signCancel').addEventListener('click', () => { AudioEngine.click(); closeSign(); });
+$('signOk').addEventListener('click', () => {
+  const v = signInput.value.trim();
+  if (v) { store.set('paper.sign', v); refreshSign(); }
+  AudioEngine.click(); closeSign();
+});
+signInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('signOk').click();
+  if (e.key === 'Escape') { e.stopPropagation(); closeSign(); }
+});
+signPop.addEventListener('pointerdown', e => { if (e.target === signPop) closeSign(); });
+
+/* ================= 初始化 ================= */
+AudioEngine.muted = store.get('paper.muted', '0') === '1';
+refreshMuteIcon();
+refreshFsIcon();
+if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen) $('fsBtn').style.display = 'none';
+refreshModeUI();
+refreshMeta();
+refreshSign();
+G.camY = Math.max(520, H * 1.02); G.camTo = G.camY;
+seedTitle();
+setTimeout(() => { if (G.phase === 'title') playHint.classList.remove('show'); }, 100);
+
+/* ================= 测试接口 ================= */
+window.HOLO = {
+  get phase() { return G.phase; },
+  get score() { return G.score; },
+  get time() { return G.time; },
+  get combo() { return G.combo; },
+  get fever() { return G.fever; },
+  get diff() { return G.diff; },
+  get lives() { return G.lives; },
+  get slow() { return G.slow; },
+  get wind() { return G.wind.cur; },
+  get keep() { return G.keep; },
+  get sign() { return store.get('paper.sign', ''); },
+  get sweepT() { return G.sweepT; },
+  get stats() { return Object.assign({ score: G.score, timeAdded: G.timeAdded }, G.stats); },
+  get balloons() {
+    return G.balloons.map(b => ({
+      id: b.id, kind: b.kind, ci: b.ci, x: b.x, y: b.y - G.camY,
+      rx: b.rx, ry: b.ry, vy: b.vy, qaPin: b.qaPin,
+    }));
+  },
+  get colors() { return COLORS.map(c => c.name); },
+  get halves() { return G.halves.length; },
+  get shelf() { return G.shelf.length; },
+  get muted() { return AudioEngine.muted; },
+  endFever: () => endFever(),
+  start: m => startRound(m),
+  tick: ts => frame(ts),
+  setLives: v => { G.lives = clamp(v, 0, 3); updateLives(); },
+  setSlow: v => { G.slow = v; document.body.classList.toggle('slow', v > 0); },
+  setTime: v => { G.time = v; },
+  setCombo: v => { G.combo = v; G.comboT = CFG.comboWindow; refreshHud(); },
+  spawn: o => { const b = makeBalloon(o || {}); G.balloons.push(b); return b.id; },
+  pinAll: () => { G.balloons.forEach(b => { b.qaPin = true; b.vy = 0; }); },
+  setSpawning: v => { G.noSpawn = !v; },
+  clearField: () => { G.balloons.forEach(b => { b.y = G.camY + H + 900; b.vy = 0; b.qaPin = true; }); },
+  backToTitle,
+};
+</script>
+</body>
+</html>
