@@ -11,7 +11,7 @@
 
 *A minimalist Fruit-Slash game in Chinese ink-and-paper style. One HTML file, zero dependencies.*
 
-[在线试玩](https://你的用户名.github.io/paper-balloon/) · [报告问题](https://github.com/你的用户名/paper-balloon/issues)
+[在线试玩](https://PCWJ08.github.io/paper-balloon/) · [报告问题](https://github.com/PCWJ08/paper-balloon/issues)
 
 ![纸间气球 · 标题页](screenshots/title.png)
 
