@@ -1,0 +1,23 @@
+{
+  "name": "纸间气球 · Paper Balloon",
+  "short_name": "纸间气球",
+  "description": "水墨纸艺风格的切气球小游戏：经典、禅意、疾风三种玩法，连斩倍率、心流慢镜、时砂加时。单 HTML 文件、零依赖、离线可玩。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f0e6",
+  "theme_color": "#f4f0e6",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/title.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "卷首 · 点击择局" },
+    { "src": "screenshots/gameplay.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "对局 · 保留色与机关" },
+    { "src": "screenshots/result.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "终局 · 结算与评级" }
+  ]
+}

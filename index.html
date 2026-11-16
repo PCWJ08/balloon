@@ -9,6 +9,9 @@
 <meta name="theme-color" content="#f4f0e6">
 <meta name="color-scheme" content="light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='13'%20fill='%23b5382a'/%3E%3Ctext%20x='32'%20y='45'%20font-size='36'%20text-anchor='middle'%20fill='%23faf7ef'%20font-family='serif'%3E%E7%BA%B8%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="msapplication-TileColor" content="#f4f0e6">
 <style>
   :root{
     --paper:#f4f0e6; --paper-hi:#faf7ef;
@@ -1580,6 +1583,9 @@ signInput.addEventListener('keydown', e => {
 signPop.addEventListener('pointerdown', e => { if (e.target === signPop) closeSign(); });
 
 /* ================= 初始化 ================= */
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 AudioEngine.muted = store.get('paper.muted', '0') === '1';
 refreshMuteIcon();
 refreshFsIcon();

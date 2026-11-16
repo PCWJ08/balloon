@@ -62,6 +62,10 @@
 - **单文件 · 零依赖**：全部逻辑、样式、资源在一个 HTML 内（约 60KB），双击即玩、离线可玩
 - **细节**：devicePixelRatio 适配、`prefers-reduced-motion` 降级、页面隐藏自动暂停、窗口失焦保护、逐帧冻结与震屏反馈
 
+## 安装为桌面应用
+
+游戏是标准的 **PWA**：用 Edge/Chrome 访问线上地址，地址栏点「安装」——开始菜单出现独立窗口的「纸间气球」，支持离线游玩。
+
 ## 本地运行
 
 无需安装任何东西：
@@ -81,10 +85,11 @@ npx serve .
 ```
 .
 ├── index.html          # 游戏本体（全部逻辑、样式、资源）
-├── screenshots/        # README 展示图
-│   ├── title.png
-│   ├── gameplay.png
-│   └── result.png
+├── manifest.json       # PWA 清单（名称/图标/截图/主题色）
+├── sw.js               # Service Worker（离线缓存）
+├── privacy.html        # 隐私声明（不收集任何数据）
+├── icons/              # PWA 图标（192 / 512 / maskable）
+├── screenshots/        # 展示图（兼作 PWA 安装预览图）
 ├── LICENSE             # MIT
 └── README.md
 ```
