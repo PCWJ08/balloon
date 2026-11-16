@@ -3,7 +3,7 @@
 # 纸间气球 · Paper Balloon
 
 **一款水墨纸艺风格的切气球小游戏 —— 运笔即切，一刀两断**
-[![Microsoft Store](https://img.shields.io/badge/Microsoft-Store-0078d4)](商店链接)
+[![Microsoft Store](https://img.shields.io/badge/Microsoft-Store-0078d4)](https://apps.microsoft.com/detail/9P7KV11KM2M1)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2e8f7a)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)]()
 [![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)]()
