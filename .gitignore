@@ -1,0 +1,11 @@
+# 本地调试遗留
+.server.log
+*.log
+
+# 临时文件
+.tmp*
+*.tmp
+
+# 系统文件
+Thumbs.db
+.DS_Store

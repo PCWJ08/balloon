@@ -41,7 +41,8 @@
   body.playing #hud,body.sweeping #hud{opacity:1}
   .hud-label{display:block;font-size:10px;letter-spacing:.4em;color:var(--ink-faint);margin-bottom:6px}
   .hud-value{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1}
-  .hud-left{min-width:150px}
+  /* 42px 让时间/三息避开左上角固定的声音/全屏按钮（按钮右缘 102px） */
+  .hud-left{min-width:150px;padding-left:42px}
   #timeBarWrap{width:132px;height:1px;background:var(--line-soft);margin-top:10px}
   #timeBar{height:1px;width:100%;background:var(--ink-dim);transition:width .12s linear}
   #timeVal.danger{color:var(--seal)}
@@ -96,7 +97,7 @@
   /* ===== 三息 ===== */
   #lifeBox{display:none}
   #lifeDots{display:flex;gap:8px;margin-top:15px}
-  .life-dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--ink-dim);background:var(--ink-dim);transition:all .35s ease}
+  .life-dot{width:9px;height:9px;border-radius:50%;border:1px solid #635d53;background:#635d53;transition:all .35s ease}
   .life-dot.off{background:transparent;border-color:var(--line);transform:scale(.7)}
 
   /* ===== 覆盖层 ===== */
@@ -166,11 +167,11 @@
   #signCancel:hover{color:var(--ink);border-color:var(--ink-dim)}
 
   @media (max-width:640px){
-    #hud{padding:18px 56px}
+    #hud{padding:18px 56px 18px 24px}
     .hud-value,#scoreVal{font-size:20px}
-    .hud-left{min-width:0}
-    #timeBarWrap{width:86px}
-    .hud-right{gap:16px;min-width:0}
+    .hud-left{min-width:0;padding-left:70px}
+    #timeBarWrap{width:76px}
+    .hud-right{gap:12px;min-width:0}
     #comboBarWrap{display:none}
     #comboBox .hud-label{display:none}
     #comboVal{font-size:17px}
@@ -195,6 +196,8 @@
   }
   @media (max-width:400px){
     .hud-label{letter-spacing:.24em}
+    /* 极窄屏横向放不下：时间/三息落到按钮行下方，避免重叠 */
+    .hud-left{padding-left:0;margin-top:40px}
     .mode-row{gap:16px}
     .sign-right #bestTag{display:none}
     .stat-line{gap:14px}
@@ -370,7 +373,7 @@ const INK = [38, 34, 28], PAPER = [244, 240, 230], SEAL = [181, 56, 42];
 const DIFFS = {
   classic: { key: 'classic', label: '经典', time: 20, interval: .40, speed: 175, bombChance: .09, bombMax: 2, feverAt: 10, note: '廿秒为限' },
   zen:     { key: 'zen',     label: '禅意', time: 60, interval: .46, speed: 158, bombChance: 0,   bombMax: 0, feverAt: 10, note: '无雷静心' },
-  gale:    { key: 'gale',    label: '疾风', time: 0,  interval: .30, speed: 190, bombChance: .13, bombMax: 3, feverAt: 8,  note: '三息为命', noTimer: true, lives: 3, wind: true },
+  gale:    { key: 'gale',    label: '疾风', time: 0,  interval: .30, speed: 185, bombChance: .13, bombMax: 3, feverAt: 8,  note: '三息为命', noTimer: true, lives: 3, wind: true },
 };
 const CFG = { comboWindow: 1.8, sweepMax: 3.6, timeCap: 8, feverDur: 6, slowDur: 3.4, slowScale: .45 };
 const MODE = () => DIFFS[G.diff];
@@ -1134,7 +1137,7 @@ function update(dt) {
     }
     G.inkT -= dt;
     if (G.inkT <= 0 && !G.noSpawn) {
-      G.inkT = rand(11, 16);
+      G.inkT = df.noTimer ? rand(9, 14) : rand(11, 16); /* 疾风专属：墨涟稍密一点，其余模式不变 */
       if (!G.balloons.some(b => b.kind === 'ink') && G.slow <= 0) G.balloons.push(makeBalloon({ kind: 'ink' }));
     }
     if (df.wind) updateWind(dt);
@@ -1636,5 +1639,13 @@ window.HOLO = {
   backToTitle,
 };
 </script>
+
+    <!-- 底部个人标签 -->
+    <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; color: rgba(141, 94, 29, 0.99); font-size: 12px; font-weight: 300; letter-spacing: 1.5px; z-index: 9999; pointer-events: none;">
+        <div style="width: 35px; height: 1px; background: linear-gradient(to right, transparent, rgba(235, 220, 200, 0.85));"></div>
+        <span>未登录 · 亲署</span>
+        <div style="width: 35px; height: 1px; background: linear-gradient(to left, transparent, rgba(235, 220, 200, 0.85));"></div>
+    </div>
+
 </body>
 </html>

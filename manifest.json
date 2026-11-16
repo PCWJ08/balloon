@@ -1,7 +1,7 @@
 {
   "name": "纸间气球 · Paper Balloon",
   "short_name": "纸间气球",
-  "description": "水墨纸艺风格的切气球小游戏：经典、禅意、疾风三种玩法，连斩倍率、心流慢镜、时砂加时。单 HTML 文件、零依赖、离线可玩。",
+  "description": "水墨纸艺风斩球游戏",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",
