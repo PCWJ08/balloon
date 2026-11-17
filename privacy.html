@@ -16,6 +16,10 @@
   p{font-size:14px;color:var(--dim)}
   b{font-weight:600;color:var(--ink)}
   .foot{margin-top:48px;font-size:12px;color:var(--faint);letter-spacing:.14em}
+  .back{display:block;margin:44px auto 0;border:1px solid var(--line);background:transparent;color:var(--dim);
+    font-family:inherit;font-weight:300;font-size:13px;letter-spacing:.5em;text-indent:.5em;padding:13px 40px;
+    cursor:pointer;transition:color .25s ease,border-color .25s ease}
+  .back:hover{color:var(--ink);border-color:var(--dim)}
 </style>
 </head>
 <body>
@@ -34,6 +38,17 @@
   <h2>联系</h2>
   <p>如有疑问，请通过 GitHub 仓库的 Issues 页面联系开发者 PCWJ08 。</p>
   <div class="foot">2026 年 · 纸间工坊 | 未登录 · 亲署</div>
+  <button class="back" id="backBtn">返 回 游 戏</button>
 </div>
+<script>
+  (function () {
+    var b = document.getElementById('backBtn');
+    b.addEventListener('click', function () {
+      // 同标签页存在历史记录时回退（bfcache 可完整还原离开前的现场），否则直链回首页
+      if (document.referrer && history.length > 1) history.back();
+      else location.href = 'index.html';
+    });
+  })();
+</script>
 </body>
 </html>

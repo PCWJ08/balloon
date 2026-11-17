@@ -356,7 +356,7 @@
 
 <div id="signBar">
   <button id="signBtn"><span class="sign-seal">署</span><span id="signText">落款留名</span></button>
-  <div class="sign-right"><span id="bestTag">最佳 0</span><a href="privacy.html">隐私</a></div>
+  <div class="sign-right"><span id="bestTag">最佳 0</span><a href="privacy.html" id="privacyLink">隐私</a></div>
 </div>
 
 <script>
@@ -565,6 +565,17 @@ const AudioEngine = {
     if (!this.amb) return;
     const a = this.amb; this.amb = null;
     try { a.g.gain.setTargetAtTime(0, this.ac.currentTime, .25); setTimeout(() => { try { a.src.stop(); } catch (e) {} }, 1200); } catch (e) {}
+  },
+  // 整页跳转前调用：清零总线增益并挂起上下文，保证旧内核 WebView 下声音立即终止
+  suspendAll() {
+    if (this.master) this.master.gain.value = 0;
+    if (this.ac && this.ac.state === 'running') { try { this.ac.suspend(); } catch (e) {} }
+  },
+  // bfcache 恢复页面时调用：还原总线增益并唤醒上下文，静音开关状态以 muted 为准
+  resumeAll() {
+    if (!this.ac) return;
+    if (this.master) this.master.gain.value = this.muted ? 0 : .9;
+    if (this.ac.state === 'suspended') { try { this.ac.resume(); } catch (e) {} }
   },
   tone(type, f0, f1, dur, peak, delay) {
     if (!this.ac || this.muted) return;
@@ -998,6 +1009,8 @@ function startRound(modeKey) {
   G.balloons = []; G.halves = []; G.confetti = []; G.rings = []; G.splashes = []; G.floats = []; G.cuts = [];
   G.shelf = []; G.missedLog = []; G.keptLog = [];
   G.lastTier = 1;
+  // 新局作废旧快照，防异常路径残留
+  try { sessionStorage.removeItem(PRIVACY_SNAP_KEY); } catch (e) {}
   G.camY = Math.max(520, H * 1.02); G.camTo = G.camY;
   trail.length = 0; ptr.stroke = 0; ptr.down = false; ptr.seen = false;
   endFever();
@@ -1119,6 +1132,106 @@ function seedTitle() {
     const b = makeBalloon({ x, y: rand(H * .08, H * 1.05) });
     b.vy = -rand(14, 26) * SCALE; b.vy0 = b.vy; b.amp = rand(6, 14) * SCALE;
     G.balloons.push(b);
+  }
+}
+
+/* ================= 隐私页往返快照 ================= */
+/* “隐私”为整页跳转，返回即整页重载，内存对局随之丢失。跳转前将局面序列化
+   至 sessionStorage，载入时按离开时的 phase 还原：play/sweep → 暂停层（续局
+   续接同一局）；result → 结算页；ascend → 直接出结算；title 不存快照。 */
+const PRIVACY_SNAP_KEY = 'paper.privacySnap';
+const PRIVACY_SNAP_KEYS = [
+  'phase', 'time', 'score', 'combo', 'comboT', 'fever', 'diff', 'keep', 'sweepT', 'ascendT',
+  'camY', 'camTo', 'spawnT', 'goldT', 'inkT', 'slow', 'lives', 'endPending', 'wind', 'streaks',
+  'elapsed', 'lastWhole', 'timeAdded', 'noSpawn', 'paused', 'freeze', 'shakeT', 'shakeDur',
+  'shakeMag', 'stats', 'balloons', 'confetti', 'rings', 'splashes', 'floats', 'cuts',
+  'shelf', 'missedLog', 'keptLog', 'lastTier',
+];
+function savePrivacySnapshot() {
+  try {
+    if (G.phase === 'title') { sessionStorage.removeItem(PRIVACY_SNAP_KEY); return; }
+    const snap = { g: {}, gTime, ui: null };
+    for (const k of PRIVACY_SNAP_KEYS) snap.g[k] = G[k];
+    if (G.phase === 'result') {
+      // 结算页存渲染文本而非重算：最佳成绩已入库，重算会把“新纪录”误判为“历来最佳”
+      snap.ui = {
+        rDiff: $('rDiff').textContent, rScore: $('rScore').textContent,
+        rTotal: $('rTotal').textContent, rGood: $('rGood').textContent,
+        rBad: $('rBad').textContent, rMiss: $('rMiss').textContent,
+        rKeep: $('rKeep').textContent, rCombo: $('rCombo').textContent,
+        rStroke: $('rStroke').textContent, rTime: $('rTime').textContent,
+        rRank: $('rRank').textContent, rRankName: $('rRankName').textContent,
+        recordLine: $('recordLine').textContent,
+      };
+    }
+    sessionStorage.setItem(PRIVACY_SNAP_KEY, JSON.stringify(snap));
+  } catch (e) {}
+}
+function tryRestorePrivacySnapshot() {
+  let snap = null;
+  try { snap = JSON.parse(sessionStorage.getItem(PRIVACY_SNAP_KEY) || 'null'); } catch (e) {}
+  // phase 白名单：损坏或被篡改的快照一律回落卷首
+  if (!snap || !snap.g || !DIFFS[snap.g.diff] || !['play', 'sweep', 'result', 'ascend'].includes(snap.g.phase)) return;
+  try { sessionStorage.removeItem(PRIVACY_SNAP_KEY); } catch (e) {}
+  for (const k in snap.g) G[k] = snap.g[k];
+  gTime = snap.gTime || 0;
+  // halves 持有 canvas 引用不可序列化；存活期不足 1.2s，直接丢弃
+  G.halves = [];
+  // 续接气球自增编号，避免与重载后的新气球 id 冲突（HOLO 接口依赖 id 唯一）
+  uid = G.balloons.reduce((m, b) => Math.max(m, b.id || 0), 0);
+  G.paused = false;
+  const df = DIFFS[G.diff];
+  if (G.phase === 'play' || G.phase === 'sweep') {
+    document.body.classList.add('playing');
+    document.body.classList.toggle('sweeping', G.phase === 'sweep');
+    document.body.classList.toggle('fever', G.fever > 0);
+    document.body.classList.toggle('slow', G.slow > 0);
+    keepSwatch.style.background = COLORS[G.keep].css;
+    keepName.textContent = COLORS[G.keep].name;
+    timeBox.style.display = df.noTimer ? 'none' : 'block';
+    lifeBox.style.display = df.noTimer ? 'block' : 'none';
+    if (df.noTimer) updateLives();
+    else if (G.phase === 'sweep') {
+      timeEl.textContent = '0.00';
+      timeEl.classList.remove('danger', 'critical');
+      timeBar.style.width = '0%';
+    } else {
+      timeEl.textContent = G.time.toFixed(2);
+      timeEl.classList.toggle('danger', Math.ceil(G.time) <= 5);
+      timeEl.classList.toggle('critical', Math.ceil(G.time) <= 3);
+      timeBar.style.width = clamp(G.time / df.time, 0, 1) * 100 + '%';
+    }
+    refreshHud();
+    comboBar.style.width = (G.combo > 0 ? clamp(G.comboT / CFG.comboWindow, 0, 1) * 100 : 0) + '%';
+    sweepHint.classList.toggle('show', G.phase === 'sweep');
+    playHint.classList.remove('show');
+    titleScreen.classList.add('hidden');
+    resultScreen.classList.add('hidden');
+    setPaused(true); // 复用暂停流程呈现，保证与常规暂停状态完全一致
+  } else if (G.phase === 'result') {
+    document.body.classList.remove('playing', 'sweeping', 'fever', 'slow');
+    if (snap.ui) {
+      $('rDiff').textContent = snap.ui.rDiff; $('rScore').textContent = snap.ui.rScore;
+      $('rTotal').textContent = snap.ui.rTotal; $('rGood').textContent = snap.ui.rGood;
+      $('rBad').textContent = snap.ui.rBad; $('rMiss').textContent = snap.ui.rMiss;
+      $('rKeep').textContent = snap.ui.rKeep; $('rCombo').textContent = snap.ui.rCombo;
+      $('rStroke').textContent = snap.ui.rStroke; $('rTime').textContent = snap.ui.rTime;
+      $('rRank').textContent = snap.ui.rRank; $('rRankName').textContent = snap.ui.rRankName;
+      $('recordLine').textContent = snap.ui.recordLine;
+    } else showResult();
+    titleScreen.classList.add('hidden');
+    pauseScreen.classList.add('hidden');
+    sweepHint.classList.remove('show');
+    playHint.classList.remove('show');
+    resultScreen.classList.remove('hidden');
+    refreshMeta();
+  } else if (G.phase === 'ascend') {
+    // 回收动画中断：补齐终镜位并直接出结算；最佳成绩尚未写入，新纪录判定不受影响
+    document.body.classList.remove('playing', 'sweeping', 'fever', 'slow');
+    G.camY = G.camTo = -52;
+    titleScreen.classList.add('hidden');
+    pauseScreen.classList.add('hidden');
+    showResult();
   }
 }
 
@@ -1568,7 +1681,12 @@ modeBtns.forEach(btn => btn.addEventListener('click', () => {
   refreshModeUI(); refreshMeta();
 }));
 $('pauseBtn').addEventListener('click', () => setPaused(true));
-$('resumeBtn').addEventListener('click', () => setPaused(false));
+$('resumeBtn').addEventListener('click', () => {
+  // 整页重载恢复的对局尚无环境音节点，续局时补建；节点已存在时为空操作
+  AudioEngine.ensure();
+  AudioEngine.startAmb();
+  setPaused(false);
+});
 $('quitBtn').addEventListener('click', () => { setPaused(false); backToTitle(); });
 window.addEventListener('keydown', e => {
   if (e.key !== 'Escape' || e.repeat) return;
@@ -1577,6 +1695,21 @@ window.addEventListener('keydown', e => {
   setPaused(!G.paused);
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+// 离页即挂起音频；bfcache 恢复时还原，避免跳转后旧页风声残留
+window.addEventListener('pagehide', () => AudioEngine.suspendAll());
+window.addEventListener('pageshow', e => {
+  if (e.persisted) {
+    // bfcache 恢复时内存状态完好，快照已过期，清除以防此后重载误恢复
+    try { sessionStorage.removeItem(PRIVACY_SNAP_KEY); } catch (err) {}
+    AudioEngine.resumeAll();
+  }
+});
+// 修饰键/非左键点击不发生本页跳转，跳过快照与静音
+$('privacyLink').addEventListener('click', e => {
+  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
+  savePrivacySnapshot();
+  AudioEngine.suspendAll();
+});
 $('muteBtn').addEventListener('click', () => {
   AudioEngine.ensure();
   AudioEngine.setMuted(!AudioEngine.muted);
@@ -1636,6 +1769,7 @@ refreshMeta();
 refreshSign();
 G.camY = Math.max(520, H * 1.02); G.camTo = G.camY;
 seedTitle();
+tryRestorePrivacySnapshot(); // 载入时还原隐私页往返前的界面（见“隐私页往返快照”节）
 setTimeout(() => { if (G.phase === 'title') playHint.classList.remove('show'); }, 100);
 
 /* ================= 测试接口 ================= */
