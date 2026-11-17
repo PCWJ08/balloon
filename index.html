@@ -120,7 +120,7 @@
   .overlay::-webkit-scrollbar-thumb:hover{background:rgba(38,34,28,.32)}
   .overlay.hidden{display:none}
   #resultScreen{background:rgba(244,240,230,.88);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-  
+  #pauseScreen{background:rgba(244,240,230,.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   .col{
     text-align:center;
     width: 100%; /* 核心：让它占满可用宽度，而不是被内容挤小 */
@@ -155,19 +155,18 @@
   #rRank{font-family:var(--serif);font-size:26px;line-height:1}
   #rRankName{font-size:8px;letter-spacing:.18em;margin-top:3px;opacity:.85}
   #recordLine{margin-top:16px;font-size:11px;letter-spacing:.3em;color:var(--seal);min-height:15px}
-  .stat-line{display:flex;justify-content:center;gap:38px;margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft)}
-  .stat .s-label{font-size:10px;letter-spacing:.3em;color:var(--ink-faint);margin-bottom:8px}
-  .stat .s-value{font-family:var(--serif);font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
-  .stat.bad .s-value{color:var(--seal)}
-  .stat.keep .s-value{color:var(--green)}
+  .stat-line{display:flex;justify-content:space-evenly;align-items:flex-start;margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft)}
+  .stat{flex:1;text-align:center}
+  .stat .s-label{font-size:10px;letter-spacing:.3em;color:var(--ink-faint);margin-bottom:8px;text-indent:.3em}
+  .stat .s-value{font-family:var(--serif);font-size:24px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
   .sub-line{margin-top:22px;font-size:11px;letter-spacing:.18em;color:var(--ink-dim)}
-  .btn-row{display:flex;justify-content:center;gap:14px}
+  .btn-row{display:flex;justify-content:center;gap:20px}
   .btn-row .ink-btn,.btn-row .ghost-btn{margin-top:34px;min-width:212px}
 
   /* ===== 署名 ===== */
   #signBar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
     padding:13px 22px;background:linear-gradient(transparent,rgba(244,240,230,.92) 40%)}
-  #signBtn{display:flex;align-items:center;gap:10px;border:none;background:transparent;color:var(--ink-dim);
+  #signBtn{display:flex;align-items:center;gap:14px;border:none;background:transparent;color:var(--ink-dim);
     font-size:11px;letter-spacing:.24em;padding:4px 2px;transition:color .25s ease}
   #signBtn:hover{color:var(--ink)}
   .sign-seal{width:19px;height:19px;background:var(--seal);color:var(--paper-hi);font-family:var(--serif);
@@ -182,7 +181,7 @@
     font-family:var(--serif);font-size:18px;letter-spacing:.14em;color:var(--ink);text-align:center;
     padding:8px 4px;width:220px;transition:border-color .25s ease}
   #signInput:focus{border-color:var(--ink-dim)}
-  .sign-btns{display:flex;justify-content:center;gap:12px;margin-top:24px}
+  .sign-btns{display:flex;justify-content:center;gap:18px;margin-top:24px}
   .sign-btns button{font-size:12px;letter-spacing:.3em;text-indent:.3em;padding:9px 24px;transition:all .25s ease}
   #signOk{border:1px solid var(--ink);background:var(--ink);color:var(--paper)}
   #signOk:hover{background:var(--seal);border-color:var(--seal)}
@@ -318,9 +317,9 @@
     <div class="stat-line">
       <div class="stat"><div class="s-label">切落</div><div class="s-value" id="rTotal">0</div></div>
       <div class="stat"><div class="s-label">切对</div><div class="s-value" id="rGood">0</div></div>
-      <div class="stat bad"><div class="s-label">误切</div><div class="s-value" id="rBad">0</div></div>
+      <div class="stat"><div class="s-label">误切</div><div class="s-value" id="rBad">0</div></div>
       <div class="stat"><div class="s-label">漏网</div><div class="s-value" id="rMiss">0</div></div>
-      <div class="stat keep"><div class="s-label">保留</div><div class="s-value" id="rKeep">0</div></div>
+      <div class="stat"><div class="s-label">保留</div><div class="s-value" id="rKeep">0</div></div>
     </div>
     <div class="sub-line"><span id="rCombo">最高连斩 0</span> · <span id="rStroke">一刀 0 连</span> · <span id="rTime">加时 0 秒</span></div>
     <div class="btn-row">
@@ -533,8 +532,16 @@ const AudioEngine = {
   setMuted(m) {
     this.muted = m;
     if (this.master) this.master.gain.value = m ? 0 : .9;
-    if (m) this.setAmb(0);
-    else if (G.phase === 'play' && !G.paused) this.startAmb();
+    if (m) {
+      this.setAmb(0);
+    } else if (G.phase === 'play' && !G.paused) {
+      // 修复：如果 ambient 声音对象存在，直接恢复音量；如果不存在，才重新启动
+      if (this.amb) {
+        this.setAmb(ambBase);
+      } else {
+        this.startAmb();
+      }
+    }
   },
   amb: null,
   startAmb() {
@@ -1664,7 +1671,7 @@ window.HOLO = {
 </script>
 
     <!-- 底部个人标签 -->
-    <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; color: rgba(141, 94, 29, 0.99); font-size: 12px; font-weight: 300; letter-spacing: 1.5px; z-index: 9999; pointer-events: none;">
+    <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; color: rgba(141, 94, 29, 0.99); font-size: 12px; font-weight: 300; letter-spacing: 1.5px; z-index: 9999; pointer-events: none;">
         <div style="width: 35px; height: 1px; background: linear-gradient(to right, transparent, rgba(235, 220, 200, 0.85));"></div>
         <span>未登录 · 亲署</span>
         <div style="width: 35px; height: 1px; background: linear-gradient(to left, transparent, rgba(235, 220, 200, 0.85));"></div>
