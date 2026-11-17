@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-2e8f7a)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)]()
 [![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)]()
-[![Single File](https://img.shields.io/badge/单文件-~60KB-d9482f)]()
+[![Single File](https://img.shields.io/badge/单文件-~77KB-d9482f)]()
 
 *A minimalist Fruit-Slash game in Chinese ink-and-paper style. One HTML file, zero dependencies.*
 
@@ -59,7 +59,7 @@
 
 - **Canvas 2D** 渲染：气球、切割两半、纸屑、墨环、风痕全部程序化绘制；精灵图在启动时用代码烘焙，无任何图片资源
 - **WebAudio** 合成音效：切纸、木鱼、钟鸣、风声环境音均为振荡器与噪声实时合成，无音频文件
-- **单文件 · 零依赖**：全部逻辑、样式、资源在一个 HTML 内（约 60KB），双击即玩、离线可玩
+- **单文件 · 零依赖**：全部逻辑、样式、资源在一个 HTML 内（约 77KB），双击即玩、离线可玩
 - **细节**：devicePixelRatio 适配、`prefers-reduced-motion` 降级、页面隐藏自动暂停、窗口失焦保护、逐帧冻结与震屏反馈
 
 ## 安装为桌面应用

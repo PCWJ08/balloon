@@ -101,18 +101,16 @@
   .life-dot.off{background:transparent;border-color:var(--line);transform:scale(.7)}
 
   /* ===== 覆盖层 ===== */
-  /* 安装版 WebView 内核较旧，不认 inset 简写：显式四边定位，否则覆盖层缩到左上角 */
-
-
-  
+  /* 安装版 WebView 内核较旧，不识别 inset 简写，故四边分别定位，否则覆盖层会收缩到左上角 */
   .overlay{
     position:fixed; top:0; right:0; bottom:0; left:0; z-index:10;
-    display:flex; flex-direction:column; /* 强制纵向排列 */
-    align-items:center; /* 核心：保证水平居中 */
+    display:flex; flex-direction:column;
+    align-items:center;
     overflow-y:auto;
+    touch-action:pan-y; /* body 设为 none 后仍需允许小屏横向溢出时纵向滚动 */
     scrollbar-width:thin; scrollbar-color:rgba(38,34,28,.22) transparent;
-    padding: 30px 20px; /* 增加一点内边距防止贴边 */
-    box-sizing: border-box;
+    padding:30px 20px;
+    box-sizing:border-box;
   }
   .overlay::-webkit-scrollbar{width:6px}
   .overlay::-webkit-scrollbar-track{background:transparent}
@@ -121,17 +119,16 @@
   .overlay.hidden{display:none}
   #resultScreen{background:rgba(244,240,230,.88);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
   #pauseScreen{background:rgba(244,240,230,.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  /* 内容列：占满可用宽度，垂直居中由 margin:auto 承担 */
   .col{
     text-align:center;
-    width: 100%; /* 核心：让它占满可用宽度，而不是被内容挤小 */
+    width:100%;
     max-width:640px;
-    box-sizing: border-box;
-    margin:auto; /* 保持垂直居中 */
-    padding: 30px 28px;
+    box-sizing:border-box;
+    margin:auto;
+    padding:30px 28px;
     animation:rise .7s cubic-bezier(.2,.7,.3,1) both
   }
-
-
 
   @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   .overline{font-size:10px;letter-spacing:.56em;text-indent:.56em;color:var(--ink-faint);margin-bottom:22px}
@@ -164,14 +161,18 @@
   .btn-row .ink-btn,.btn-row .ghost-btn{margin-top:34px;min-width:212px}
 
   /* ===== 署名 ===== */
+  /* 底栏整体不拦截指针事件，否则底部一条会吞掉划动，导致贴底的气球切不到 */
   #signBar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
-    padding:13px 22px;background:linear-gradient(transparent,rgba(244,240,230,.92) 40%)}
+    padding:13px 22px;background:linear-gradient(transparent,rgba(244,240,230,.92) 40%);pointer-events:none}
+  #signBtn,#signBar a{pointer-events:auto}
   #signBtn{display:flex;align-items:center;gap:14px;border:none;background:transparent;color:var(--ink-dim);
     font-size:11px;letter-spacing:.24em;padding:4px 2px;transition:color .25s ease}
   #signBtn:hover{color:var(--ink)}
   .sign-seal{width:19px;height:19px;background:var(--seal);color:var(--paper-hi);font-family:var(--serif);
     font-size:11px;display:flex;align-items:center;justify-content:center;transform:rotate(-3deg);flex:none}
   .sign-right{display:flex;gap:22px;font-size:10px;letter-spacing:.24em;color:var(--ink-faint)}
+  .sign-right a{color:inherit;text-decoration:none;transition:color .25s ease}
+  .sign-right a:hover{color:var(--ink)}
   #signPop{position:fixed;top:0;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(38,34,28,.22)}
   #signPop.hidden{display:none}
   .sign-card{background:var(--paper-hi);border:1px solid var(--line);margin:auto;padding:34px 40px;text-align:center;
@@ -355,7 +356,7 @@
 
 <div id="signBar">
   <button id="signBtn"><span class="sign-seal">署</span><span id="signText">落款留名</span></button>
-  <div class="sign-right"><span id="bestTag">最佳 0</span></div>
+  <div class="sign-right"><span id="bestTag">最佳 0</span><a href="privacy.html">隐私</a></div>
 </div>
 
 <script>
@@ -535,7 +536,7 @@ const AudioEngine = {
     if (m) {
       this.setAmb(0);
     } else if (G.phase === 'play' && !G.paused) {
-      // 修复：如果 ambient 声音对象存在，直接恢复音量；如果不存在，才重新启动
+      // 取消静音时恢复环境音：音频对象已存在则只回升音量，尚未创建才重新启动
       if (this.amb) {
         this.setAmb(ambBase);
       } else {
@@ -1043,8 +1044,8 @@ function endRound() {
     if (b.ci === G.keep) { G.stats.kept++; G.keptLog.push(b.ci); }
     else { G.stats.missed++; G.missedLog.push(b.ci); }
   }
-  const dock = G.balloons.filter(b => b.kind === 'normal');
-  const shelfN = Math.min(dock.length + G.missedLog.length + G.keptLog.length, 16);
+  // 终局仍在场的普通气球已在上面的统计循环中写入 keptLog / missedLog，此处只按日志上架，避免重复
+  const shelfN = Math.min(G.keptLog.length + G.missedLog.length, 16);
   G.shelf = [];
   let slot = 0;
   const slotW = W * .84 / Math.max(shelfN, 1);
@@ -1055,7 +1056,6 @@ function endRound() {
     G.shelf.push({ ci, mode, x: W * (.08 + .84 * fx) + rand(-4, 4), y: 168 + rand(-8, 8), rx: srx, ry: srx * 1.15, w1: rand(0, 6) });
     slot++;
   };
-  dock.forEach(b => place(b.ci, b.ci === G.keep ? 'keep' : 'miss'));
   G.keptLog.forEach(ci => place(ci, 'keep'));
   G.missedLog.forEach(ci => place(ci, 'miss'));
   G.balloons = [];
@@ -1150,6 +1150,7 @@ function update(dt) {
         if (whole !== G.lastWhole) {
           G.lastWhole = whole;
           if (whole <= 5) { timeEl.classList.add('danger'); AudioEngine.tick(); }
+          else timeEl.classList.remove('danger', 'critical'); /* 时砂补时后需复原配色 */
           if (whole <= 3) timeEl.classList.add('critical');
         }
       }
@@ -1167,7 +1168,8 @@ function update(dt) {
     }
     G.inkT -= dt;
     if (G.inkT <= 0 && !G.noSpawn) {
-      G.inkT = df.noTimer ? rand(9, 14) : rand(11, 16); /* 疾风专属：墨涟稍密一点，其余模式不变 */
+      // 疾风（无计时）模式墨涟间隔更短，其余模式保持原节奏
+      G.inkT = df.noTimer ? rand(9, 14) : rand(11, 16);
       if (!G.balloons.some(b => b.kind === 'ink') && G.slow <= 0) G.balloons.push(makeBalloon({ kind: 'ink' }));
     }
     if (df.wind) updateWind(dt);
@@ -1202,7 +1204,8 @@ function update(dt) {
           if (b.ci === G.keep) { G.stats.kept++; G.keptLog.push(b.ci); }
           else {
             G.stats.missed++; G.missedLog.push(b.ci);
-            if (MODE().noTimer && G.phase === 'play') loseLife(b.x, 60);
+            // loseLife 的坐标使用世界坐标，屏幕顶端 60px 需叠加相机偏移
+            if (MODE().noTimer && G.phase === 'play') loseLife(b.x, G.camY + 60);
           }
         }
       }
@@ -1567,7 +1570,12 @@ modeBtns.forEach(btn => btn.addEventListener('click', () => {
 $('pauseBtn').addEventListener('click', () => setPaused(true));
 $('resumeBtn').addEventListener('click', () => setPaused(false));
 $('quitBtn').addEventListener('click', () => { setPaused(false); backToTitle(); });
-window.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.repeat) setPaused(!G.paused); });
+window.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || e.repeat) return;
+  // 落款弹层优先响应，避免焦点不在输入框时按 Esc 变成暂停
+  if (!signPop.classList.contains('hidden')) { closeSign(); return; }
+  setPaused(!G.paused);
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
 $('muteBtn').addEventListener('click', () => {
   AudioEngine.ensure();

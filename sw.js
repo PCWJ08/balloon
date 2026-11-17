@@ -1,5 +1,5 @@
 /* 纸间气球 · Service Worker —— 导航/清单走网络优先，其余资源缓存优先 */
-const CACHE = 'paper-balloon-v2';
+const CACHE = 'paper-balloon-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -10,8 +10,11 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -25,14 +28,17 @@ self.addEventListener('activate', e => {
 /* 始终最新：页面导航与 manifest */
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET') return;
+  if (req.method !== 'GET' || !req.url.startsWith('http')) return;
   const nav = req.mode === 'navigate';
   const fresh = nav || new URL(req.url).pathname.endsWith('manifest.json');
   if (fresh) {
     e.respondWith(
       fetch(req).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(req, copy));
+        // 仅缓存正常响应，避免把 404/500 页面写成离线兜底
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
         return res;
       }).catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')))
     );
@@ -44,7 +50,7 @@ self.addEventListener('fetch', e => {
       hit || fetch(req).then(res => {
         if (res.ok) {
           const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(req, copy));
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
         }
         return res;
       })
