@@ -5,13 +5,13 @@
 **一款水墨纸艺风格的切气球小游戏 —— 运笔即切，一刀两断**
 [![Microsoft Store](https://img.shields.io/badge/Microsoft-Store-0078d4)](https://apps.microsoft.com/detail/9P7KV11KM2M1)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2e8f7a)](LICENSE)
-[![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)]()
-[![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)]()
-[![Single File](https://img.shields.io/badge/单文件-~77KB-d9482f)]()
+[![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)](https://github.com/PCWJ08/paper-balloon)
+[![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)](https://github.com/PCWJ08/paper-balloon)
+[![Single File](https://img.shields.io/badge/单文件-~80KB-d9482f)](https://github.com/PCWJ08/paper-balloon)
 
 *A minimalist Fruit-Slash game in Chinese ink-and-paper style. One HTML file, zero dependencies.*
 
-[在线试玩](https://PCWJ08.github.io/paper-balloon/) · [报告问题](https://github.com/PCWJ08/paper-balloon/issues)
+[查看声明](https://PCWJ08.github.io/paper-balloon/privacy) · [在线试玩](https://PCWJ08.github.io/paper-balloon/) · [报告问题](https://github.com/PCWJ08/paper-balloon/issues)
 
 ![纸间气球 · 标题页](screenshots/title.png)
 
@@ -21,7 +21,7 @@
 
 ## 简介
 
-「纸间气球」是一页会玩的宣纸：五色纸鸢自纸上浮起，运笔即切，**切落非保留之色**，留一色于心。避开墨雷、追逐时砂、偶得墨涟缓时——在连斩与心流之间，练一手又轻又准的刀。
+「纸间气球」是一页会玩的宣纸：五色纸鸢自纸上浮起，运笔即切，**切落非留之色**，留一色于心。避开墨雷、追逐时砂、偶得墨涟缓时——在连斩与心流之间，练一手又轻又准的刀。
 
 整个游戏只有一个 `index.html`：没有框架、没有构建、没有外部资源，图片在启动时以代码「烘焙」，音效用 WebAudio 现场合成。双击即玩，离线可玩。
 
@@ -59,7 +59,7 @@
 
 - **Canvas 2D** 渲染：气球、切割两半、纸屑、墨环、风痕全部程序化绘制；精灵图在启动时用代码烘焙，无任何图片资源
 - **WebAudio** 合成音效：切纸、木鱼、钟鸣、风声环境音均为振荡器与噪声实时合成，无音频文件
-- **单文件 · 零依赖**：全部逻辑、样式、资源在一个 HTML 内（约 77KB），双击即玩、离线可玩
+- **单文件 · 零依赖**：全部逻辑、样式、资源在一个 HTML 内（约 80KB），双击即玩、离线可玩
 - **细节**：devicePixelRatio 适配、`prefers-reduced-motion` 降级、页面隐藏自动暂停、窗口失焦保护、逐帧冻结与震屏反馈
 
 ## 安装为桌面应用
