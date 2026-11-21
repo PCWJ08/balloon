@@ -6,13 +6,13 @@
 [![Microsoft Store](https://img.shields.io/badge/Microsoft-Store-0078d4)](https://apps.microsoft.com/detail/9P7KV11KM2M1)
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-f38020)](https://balloon.weidenglu.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2e8f7a)](LICENSE)
-[![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)](https://github.com/PCWJ08/paper-balloon)
-[![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)](https://github.com/PCWJ08/paper-balloon)
-[![Single File](https://img.shields.io/badge/单文件-~80KB-d9482f)](https://github.com/PCWJ08/paper-balloon)
+[![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)](https://github.com/PCWJ08/balloon)
+[![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)](https://github.com/PCWJ08/balloon)
+[![Single File](https://img.shields.io/badge/单文件-~80KB-d9482f)](https://github.com/PCWJ08/balloon)
 
 *A minimalist Fruit-Slash game in Chinese ink-and-paper style. One HTML file, zero dependencies.*
 
-[在线试玩](https://balloon.weidenglu.com) · [微软商店](https://apps.microsoft.com/detail/9P7KV11KM2M1) · [隐私声明](https://balloon.weidenglu.com/privacy.html) · [报告问题](https://github.com/PCWJ08/paper-balloon/issues)
+[在线试玩](https://balloon.weidenglu.com) · [微软商店](https://apps.microsoft.com/detail/9P7KV11KM2M1) · [隐私声明](https://balloon.weidenglu.com/privacy.html) · [报告问题](https://github.com/PCWJ08/balloon/issues)
 
 ![纸间气球 · 标题页](screenshots/title.png)
 
@@ -93,7 +93,7 @@ npx serve .
 | 构建输出目录 | `/` |
 | 自定义域 | `balloon.weidenglu.com` |
 
-游戏是纯静态单页，原样也可以部署到 GitHub Pages、Vercel 等任意静态托管。
+游戏是纯静态单页，托管与域名解析全部由 Cloudflare 处理，不使用 GitHub Pages。
 
 ## 目录结构
 
@@ -105,7 +105,6 @@ npx serve .
 ├── privacy.html        # 隐私声明（不收集任何数据）
 ├── icons/              # PWA 图标（192 / 512 / maskable）
 ├── screenshots/        # 展示图（兼作 PWA 安装预览图）
-├── CNAME               # 站点域名（balloon.weidenglu.com）
 ├── LICENSE             # MIT
 └── README.md
 ```
