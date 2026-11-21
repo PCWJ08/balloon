@@ -4,6 +4,7 @@
 
 **一款水墨纸艺风格的切气球小游戏 —— 运笔即切，一刀两断**
 [![Microsoft Store](https://img.shields.io/badge/Microsoft-Store-0078d4)](https://apps.microsoft.com/detail/9P7KV11KM2M1)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-f38020)](https://balloon.weidenglu.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2e8f7a)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/vanilla-JavaScript-c08a2a)](https://github.com/PCWJ08/paper-balloon)
 [![Dependencies](https://img.shields.io/badge/依赖-0-3a5fa8)](https://github.com/PCWJ08/paper-balloon)
@@ -11,7 +12,7 @@
 
 *A minimalist Fruit-Slash game in Chinese ink-and-paper style. One HTML file, zero dependencies.*
 
-[查看声明](https://PCWJ08.github.io/paper-balloon/privacy) · [在线试玩](https://PCWJ08.github.io/paper-balloon/) · [报告问题](https://github.com/PCWJ08/paper-balloon/issues)
+[在线试玩](https://balloon.weidenglu.com) · [微软商店](https://apps.microsoft.com/detail/9P7KV11KM2M1) · [隐私声明](https://balloon.weidenglu.com/privacy.html) · [报告问题](https://github.com/PCWJ08/paper-balloon/issues)
 
 ![纸间气球 · 标题页](screenshots/title.png)
 
@@ -64,7 +65,9 @@
 
 ## 安装为桌面应用
 
-游戏是标准的 **PWA**：用 Edge/Chrome 访问线上地址，地址栏点「安装」——开始菜单出现独立窗口的「纸间气球」，支持离线游玩。
+**方式一 · 微软商店（推荐）**：在 Microsoft Store 搜索「纸间气球」，或直接访问[商店页面](https://apps.microsoft.com/detail/9P7KV11KM2M1)——安装即离线可玩，自动更新。
+
+**方式二 · 浏览器 PWA**：用 Edge/Chrome 访问[线上地址](https://balloon.weidenglu.com)，地址栏点「安装」——开始菜单出现独立窗口的「纸间气球」，同样支持离线游玩。
 
 ## 本地运行
 
@@ -80,6 +83,18 @@ npx serve .
 
 然后访问 `http://localhost:8080`。
 
+## 部署（Cloudflare Pages）
+
+本仓库已关联 Cloudflare Pages，推送到 GitHub 即自动部署，无需任何构建：
+
+| 设置 | 值 |
+| --- | --- |
+| 构建命令 | 留空 |
+| 构建输出目录 | `/` |
+| 自定义域 | `balloon.weidenglu.com` |
+
+游戏是纯静态单页，原样也可以部署到 GitHub Pages、Vercel 等任意静态托管。
+
 ## 目录结构
 
 ```
@@ -90,6 +105,7 @@ npx serve .
 ├── privacy.html        # 隐私声明（不收集任何数据）
 ├── icons/              # PWA 图标（192 / 512 / maskable）
 ├── screenshots/        # 展示图（兼作 PWA 安装预览图）
+├── CNAME               # 站点域名（balloon.weidenglu.com）
 ├── LICENSE             # MIT
 └── README.md
 ```
