@@ -26,7 +26,7 @@ const PROVINCE = {
   'hong kong': '香港', 'macau': '澳门', 'macao': '澳门', 'taiwan': '台湾'
 };
 
-/* 把请求头里的地理位置折成一句可展示的话 */
+/* 将请求头中的地理位置转换为展示文本 */
 function placeOf(cf) {
   if (!cf) return '未知地区';
 
@@ -74,7 +74,7 @@ export class Board {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // 管理动作必须带 Worker 盖的章（X-Board-Admin: 1），否则视同普通请求
+    // 管理动作须携带 Worker 注入的内部标记，否则按普通请求处理
     const admin = url.searchParams.get('admin');
     if (admin && request.headers.get('X-Board-Admin') === '1') {
       if (admin === 'list') return this.adminList(url);
@@ -127,7 +127,7 @@ export class Board {
     const dir = tab === 'high' ? 'DESC' : 'ASC';
     const cmp = tab === 'high' ? '>' : '<';
 
-    // 0 分不入榜：这里的 hi > 0 / lo < 0 就是最后一道闸
+    // 0 分不入榜：hi > 0 / lo < 0 为最终过滤条件
     const rows = this.sql.exec(
       `SELECT ${col} AS score, ${col}_mode AS mode, place
          FROM devices

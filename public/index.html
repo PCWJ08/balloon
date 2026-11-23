@@ -76,7 +76,8 @@
   .score-wrap{text-align:right}
   #scoreVal{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1}
 
-  #muteBtn,#pauseBtn,#fsBtn{position:fixed;top:22px;z-index:25;width:36px;height:36px;border-radius:50%;
+  /* 常驻置顶：榜单遮罩（80）与落款弹层（30）之下都不被遮住 */
+  #muteBtn,#pauseBtn,#fsBtn{position:fixed;top:22px;z-index:85;width:36px;height:36px;border-radius:50%;
     border:1px solid var(--line);background:rgba(250,247,239,.7);color:var(--ink-dim);
     display:flex;align-items:center;justify-content:center;transition:all .25s ease}
   #muteBtn:hover,#pauseBtn:hover,#fsBtn:hover{color:var(--ink);border-color:var(--ink-dim)}
@@ -174,7 +175,7 @@
   .btn-row .ink-btn,.btn-row .ghost-btn{margin-top:34px;min-width:212px}
 
   /* ===== 署名 ===== */
-  /* 底栏整体不拦截指针事件，否则底部一条会吞掉划动，导致贴底的气球切不到 */
+  /* 底栏不拦截指针事件：否则会截获底部划动，贴底的气球无法切割 */
   #signBar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
     padding:13px 22px;background:linear-gradient(transparent,rgba(244,240,230,.92) 40%);pointer-events:none}
   #signBtn,#signBar a{pointer-events:auto}
@@ -302,6 +303,7 @@
     background:var(--ink); transform:scaleX(0); transition:transform .3s ease}
   .bd-tab.on::after{transform:scaleX(1)}
 
+  .bd-meta[hidden]{display:none}
   .bd-meta{display:flex; justify-content:space-between; margin-top:13px; padding:0 3px;
     font-size:9px; letter-spacing:.18em; color:var(--ink-faint)}
   .bd-meta b{font-weight:400; color:var(--ink-dim); font-variant-numeric:tabular-nums}
@@ -508,7 +510,7 @@
       <button class="bd-tab" data-tab="low">低分</button>
     </div>
 
-    <div class="bd-meta">
+    <div class="bd-meta" id="bdMeta">
       <span>榜上 <b id="bdTotal">0</b> 人</span>
       <span id="bdRange">止录前百</span>
     </div>
@@ -1976,7 +1978,7 @@ window.HOLO = {
 /* ================= 榜单 ================= */
 /* 与主循环无关的一块：只在开局/暂停/终局打开。
    数据在服务端，全站共用一份；前端只负责取与画。
-   0 分不入榜：提交不发、服务端不收、收到再滤一遍。 */
+   0 分不入榜：提交端不发送、服务端拒收、渲染前再过滤。 */
 
 /* 网页版与接口同源；商店版是 ms-appx-web:// 宿主，必须指向线上地址 */
 const BD_ORIGIN = location.protocol === 'ms-appx-web:' ? 'https://balloon.weidenglu.com' : '';
@@ -1985,8 +1987,8 @@ const BOARD = {
   api: BD_ORIGIN + '/api/board',
   limit: 100,
   tab: 'high',
-  seq: 0,           // 请求序号，防止旧响应盖新榜
-  timer: 0          // 榜面停留时的自动刷新
+  seq: 0,           // 请求序号：丢弃过期响应，避免覆盖当前榜单
+  timer: 0          // 榜面停留时的轮询定时器
 };
 
 function bdDeviceId() {
@@ -2000,7 +2002,7 @@ function bdDeviceId() {
   return v;
 }
 
-/* 服务端已按「正分进高分、负分进低分、零分不收」筛过；这里再滤一遍，双保险 */
+/* 服务端已按「正分进高分、负分进低分、零分不收」过滤；此处做二次校验 */
 function bdKeep(list, tab) {
   return list.filter(r => tab === 'high' ? r.s > 0 : r.s < 0);
 }
@@ -2054,11 +2056,12 @@ function bdState(title, sub) {
   list.innerHTML = '<li class="bd-state"><div class="b">' + title + '</div>' +
     (sub ? '<div class="s">' + sub + '</div>' : '') + '</li>';
   $('bdMe').hidden = true;
+  $('bdMeta').hidden = true;
   $('bdTotal').textContent = '0';
   $('bdRange').textContent = '';
 }
 
-/* 只露整行：先量出「不含列表」的固定高度，剩下的才给列表，最多八行 */
+/* 列表高度：先量出非列表部分的固定高度，余量按整行分配，最多八行 */
 const BD_ROWS = 8;
 
 function bdFitRows() {
@@ -2087,6 +2090,7 @@ function bdRender(data, keep) {
   const list = $('bdList');
   const scrollTop = keep ? list.scrollTop : 0;
 
+  $('bdMeta').hidden = false;
   $('bdTotal').textContent = data.total;
   $('bdRange').textContent = data.total > BOARD.limit ? '止录前百' : '尽录于此';
 
@@ -2104,7 +2108,7 @@ function bdRender(data, keep) {
   bdFitRows();
   list.scrollTop = scrollTop;
 
-  // 自己那一行：名次由服务端给
+  // 当前设备所在行：名次由服务端返回
   const meEl = $('bdMe');
   const me = data.me;
   meEl.hidden = false;
@@ -2140,6 +2144,7 @@ function bdRefresh(silent) {
 }
 
 function bdOpen() {
+  AudioEngine.ensure(); AudioEngine.click();
   const mask = $('boardMask');
   mask.classList.add('on');
   mask.setAttribute('aria-hidden', 'false');
@@ -2155,6 +2160,7 @@ function bdOpen() {
 function bdClose() {
   const mask = $('boardMask');
   if (!mask.classList.contains('on')) return;
+  AudioEngine.click();
   mask.classList.remove('on');
   mask.setAttribute('aria-hidden', 'true');
   clearInterval(BOARD.timer);
@@ -2169,13 +2175,14 @@ addEventListener('resize', () => { if ($('boardMask').classList.contains('on')) 
 
 Array.from(document.querySelectorAll('.bd-tab')).forEach(t => {
   t.addEventListener('click', () => {
+    AudioEngine.ensure(); AudioEngine.click();
     BOARD.tab = t.dataset.tab;
     Array.from(document.querySelectorAll('.bd-tab')).forEach(x => x.classList.toggle('on', x === t));
     bdRefresh();
   });
 });
 
-/* 供测试用：不改游戏状态 */
+/* 调试接口：只读，不改变游戏状态 */
 window.HOLO_BOARD = {
   get tab() { return BOARD.tab; },
   get total() { return Number($('bdTotal').textContent) || 0; },

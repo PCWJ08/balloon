@@ -29,7 +29,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || !req.url.startsWith('http')) return;
-  // 榜单接口一律直连，不落缓存，免得起手就拿到过期名次
+  // 榜单接口直连网络，不写入缓存，避免首次请求命中过期数据
   if (new URL(req.url).pathname.indexOf('/api/') === 0) return;
   const nav = req.mode === 'navigate';
   const fresh = nav || new URL(req.url).pathname.endsWith('manifest.json');

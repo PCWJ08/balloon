@@ -7,7 +7,7 @@
 
 export { Board } from './board.js';
 
-const TTL = 30;   // 榜是「看」的东西，30 秒缓存足够，也省额度
+const TTL = 30;   // 读榜缓存时长（秒）
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -29,7 +29,7 @@ export default {
 };
 
 async function board(request, env) {
-  // 普通榜单一律不认 admin 参数，避免绕过口令
+  // 普通榜单不处理 admin 参数，防止绕过口令
   if (new URL(request.url).searchParams.has('admin')) {
     return new Response('Not Found', { status: 404 });
   }
@@ -54,7 +54,7 @@ async function board(request, env) {
   return new Response(res.body, { status: res.status, headers });
 }
 
-/* 管理接口：没配口令或口令不对，一律当作不存在 */
+/* 管理接口：未配置口令或口令不符时统一返回 404，不暴露存在性 */
 async function admin(request, env, url) {
   const token = url.searchParams.get('token') || request.headers.get('X-Admin-Token') || '';
   if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
