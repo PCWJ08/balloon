@@ -1,5 +1,5 @@
 /* 纸间气球 · Service Worker —— 导航/清单走网络优先，其余资源缓存优先 */
-const CACHE = 'paper-balloon-v3';
+const CACHE = 'paper-balloon-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || !req.url.startsWith('http')) return;
+  // 榜单接口一律直连，不落缓存，免得起手就拿到过期名次
+  if (new URL(req.url).pathname.indexOf('/api/') === 0) return;
   const nav = req.mode === 'navigate';
   const fresh = nav || new URL(req.url).pathname.endsWith('manifest.json');
   if (fresh) {

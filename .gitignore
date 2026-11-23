@@ -9,3 +9,8 @@
 # 系统文件
 Thumbs.db
 .DS_Store
+
+# Wrangler 本地缓存与依赖
+.wrangler/
+node_modules/
+.dev.vars
