@@ -74,9 +74,47 @@ export class Board {
   async fetch(request) {
     const url = new URL(request.url);
 
+    // 管理动作必须带 Worker 盖的章（X-Board-Admin: 1），否则视同普通请求
+    const admin = url.searchParams.get('admin');
+    if (admin && request.headers.get('X-Board-Admin') === '1') {
+      if (admin === 'list') return this.adminList(url);
+      if (admin === 'del') return this.adminDel(url);
+    }
+
     if (request.method === 'POST') return this.submit(request, url);
     if (request.method === 'GET') return this.rank(url);
     return this.json({ ok: false, reason: 'method' }, 405);
+  }
+
+  /* ---------- 管理：看原始行 ---------- */
+  adminList(url) {
+    const limit = Math.min(500, Math.max(1, parseInt(url.searchParams.get('limit') || '200', 10) || 200));
+    const q = (url.searchParams.get('q') || '').trim();
+    const rows = q
+      ? this.sql.exec(
+          `SELECT dev, hi, hi_mode, lo, lo_mode, place, last_at
+             FROM devices WHERE dev LIKE ? ORDER BY last_at DESC LIMIT ?`, q + '%', limit
+        ).toArray()
+      : this.sql.exec(
+          `SELECT dev, hi, hi_mode, lo, lo_mode, place, last_at
+             FROM devices ORDER BY last_at DESC LIMIT ?`, limit
+        ).toArray();
+    const total = this.sql.exec(`SELECT COUNT(*) AS n FROM devices`).one().n;
+    return this.json({ ok: true, total, rows });
+  }
+
+  /* ---------- 管理：删一台，或清空 ---------- */
+  adminDel(url) {
+    const dev = url.searchParams.get('dev');
+    const wipe = url.searchParams.get('all') === '1' && url.searchParams.get('confirm') === 'YES';
+
+    if (wipe) {
+      this.sql.exec(`DELETE FROM devices`);
+      return this.json({ ok: true, cleared: true });
+    }
+    if (!dev) return this.json({ ok: false, reason: 'dev' }, 400);
+    const cur = this.sql.exec(`DELETE FROM devices WHERE dev = ?`, dev);
+    return this.json({ ok: true, deleted: cur.rowsWritten });
   }
 
   /* ---------- 取榜 ---------- */

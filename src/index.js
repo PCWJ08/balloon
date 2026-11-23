@@ -22,12 +22,18 @@ export default {
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
     if (path === '/api/board') return board(request, env);
+    if (path === '/api/board/admin') return admin(request, env, url);
 
     return env.ASSETS.fetch(request);
   }
 };
 
 async function board(request, env) {
+  // 普通榜单一律不认 admin 参数，避免绕过口令
+  if (new URL(request.url).searchParams.has('admin')) {
+    return new Response('Not Found', { status: 404 });
+  }
+
   // 商店版是 ms-appx-web:// 的宿主，属于跨源请求，必须放行预检
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
@@ -45,5 +51,23 @@ async function board(request, env) {
     ? 'public, max-age=' + TTL
     : 'no-store');
 
+  return new Response(res.body, { status: res.status, headers });
+}
+
+/* 管理接口：没配口令或口令不对，一律当作不存在 */
+async function admin(request, env, url) {
+  const token = url.searchParams.get('token') || request.headers.get('X-Admin-Token') || '';
+  if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
+    return new Response('Not Found', { status: 404 });
+  }
+  const stub = env.BOARD.get(env.BOARD.idFromName('global'));
+  const inner = new Headers(request.headers);
+  inner.set('X-Board-Admin', '1');
+  const res = await stub.fetch(new Request(request.url, {
+    method: request.method, headers: inner, body: request.body
+  }));
+  const headers = new Headers(res.headers);
+  headers.set('Cache-Control', 'no-store');
+  headers.set('X-Robots-Tag', 'noindex, nofollow');
   return new Response(res.body, { status: res.status, headers });
 }

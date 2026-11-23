@@ -1975,11 +1975,14 @@ window.HOLO = {
 
 /* ================= 榜单 ================= */
 /* 与主循环无关的一块：只在开局/暂停/终局打开。
-   数据在服务端（Worker + Durable Object），全站共用一份，前端只负责取与画。
+   数据在服务端，全站共用一份；前端只负责取与画。
    0 分不入榜：提交不发、服务端不收、收到再滤一遍。 */
 
+/* 网页版与接口同源；商店版是 ms-appx-web:// 宿主，必须指向线上地址 */
+const BD_ORIGIN = location.protocol === 'ms-appx-web:' ? 'https://balloon.weidenglu.com' : '';
+
 const BOARD = {
-  api: '/api/board',
+  api: BD_ORIGIN + '/api/board',
   limit: 100,
   tab: 'high',
   seq: 0,           // 请求序号，防止旧响应盖新榜
