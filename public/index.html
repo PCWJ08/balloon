@@ -1364,6 +1364,7 @@ function seedTitle() {
    至 sessionStorage，载入时按离开时的 phase 还原：play/sweep → 暂停层（续局
    续接同一局）；result → 结算页；ascend → 直接出结算；title 不存快照。 */
 const PRIVACY_SNAP_KEY = 'paper.privacySnap';
+const PRIVACY_LANG_KEY = 'paper.langPending';   // 往返期间的语言，防止本地存储异常时回退
 const PRIVACY_SNAP_KEYS = [
   'phase', 'time', 'score', 'combo', 'comboT', 'fever', 'diff', 'keep', 'sweepT', 'ascendT',
   'camY', 'camTo', 'spawnT', 'goldT', 'inkT', 'slow', 'lives', 'endPending', 'wind', 'streaks',
@@ -1372,9 +1373,10 @@ const PRIVACY_SNAP_KEYS = [
   'shelf', 'missedLog', 'keptLog', 'lastTier',
 ];
 function savePrivacySnapshot() {
+  try { sessionStorage.setItem(PRIVACY_LANG_KEY, LANG); } catch (e) {}
   try {
     if (G.phase === 'title') { sessionStorage.removeItem(PRIVACY_SNAP_KEY); return; }
-    const snap = { g: {}, gTime, ui: null };
+    const snap = { g: {}, gTime, ui: null, lang: LANG };
     for (const k of PRIVACY_SNAP_KEYS) snap.g[k] = G[k];
     if (G.phase === 'result') {
       // 结算页存渲染文本而非重算：最佳成绩已入库，重算会把“新纪录”误判为“历来最佳”
@@ -1457,6 +1459,8 @@ function tryRestorePrivacySnapshot() {
     pauseScreen.classList.add('hidden');
     showResult();
   }
+  // 语言以快照为准再刷一次：即使本地存储没读到，往返前后也保持一致
+  if (snap.lang) applyLang(snap.lang, true);
 }
 
 /* ================= 更新 ================= */
@@ -1926,6 +1930,9 @@ window.addEventListener('pageshow', e => {
     // bfcache 恢复时内存状态完好，快照已过期，清除以防此后重载误恢复
     try { sessionStorage.removeItem(PRIVACY_SNAP_KEY); } catch (err) {}
     AudioEngine.resumeAll();
+    // 兜底：按本地存储的语言校正一次，避免往返后语言回退
+    const saved = store.get(LANG_KEY, '');
+    if (saved && saved !== LANG) applyLang(saved, false);
   }
 });
 // 修饰键/非左键点击不发生本页跳转，跳过快照与静音
@@ -2158,8 +2165,9 @@ refreshMuteIcon();
 refreshFsIcon();
 if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen) $('fsBtn').style.display = 'none';
 refreshModeUI();
-const savedLang = store.get(LANG_KEY, '');
-applyLang(savedLang || (/^zh/i.test(navigator.language || '') ? 'zh' : 'en'), false);
+let savedLang = store.get(LANG_KEY, '');
+if (!savedLang) { try { savedLang = sessionStorage.getItem(PRIVACY_LANG_KEY) || ''; } catch (e) { savedLang = ''; } }
+applyLang(savedLang || (/^zh/i.test(navigator.language || '') ? 'zh' : 'en'), !!savedLang);
 $('langBtn').addEventListener('click', () => {
   AudioEngine.ensure(); AudioEngine.click();
   applyLang(LANG === 'zh' ? 'en' : 'zh', true);
