@@ -55,7 +55,7 @@
   .hud-label{display:block;font-size:10px;letter-spacing:.4em;color:var(--ink-faint);margin-bottom:6px}
   .hud-value{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1}
   /* 42px 让时间/三息避开左上角固定的声音/全屏按钮（按钮右缘 102px） */
-  .hud-left{min-width:150px;padding-left:42px}
+  .hud-left{min-width:150px;padding-left:86px}
   #timeBarWrap{width:132px;height:1px;background:var(--line-soft);margin-top:10px}
   #timeBar{height:1px;width:100%;background:var(--ink-dim);transition:width .12s linear}
   #timeVal.danger{color:var(--seal)}
@@ -77,12 +77,13 @@
   #scoreVal{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1}
 
   /* 常驻置顶：榜单遮罩（80）与落款弹层（30）之下都不被遮住 */
-  #muteBtn,#pauseBtn,#fsBtn{position:fixed;top:22px;z-index:85;width:36px;height:36px;border-radius:50%;
+  #muteBtn,#pauseBtn,#fsBtn,#langBtn{position:fixed;top:22px;z-index:85;width:36px;height:36px;border-radius:50%;
     border:1px solid var(--line);background:rgba(250,247,239,.7);color:var(--ink-dim);
     display:flex;align-items:center;justify-content:center;transition:all .25s ease}
-  #muteBtn:hover,#pauseBtn:hover,#fsBtn:hover{color:var(--ink);border-color:var(--ink-dim)}
+  #muteBtn:hover,#pauseBtn:hover,#fsBtn:hover,#langBtn:hover{color:var(--ink);border-color:var(--ink-dim)}
   #muteBtn{left:22px}
   #fsBtn{left:66px}
+  #langBtn{left:110px;font-family:var(--ui);font-size:12px;letter-spacing:0;font-weight:400}
   #pauseBtn{right:22px;display:none}
   body.playing #pauseBtn{display:flex}
 
@@ -206,16 +207,17 @@
   @media (max-width:640px){
     #hud{padding:18px 56px 18px 24px}
     .hud-value,#scoreVal{font-size:20px}
-    .hud-left{min-width:0;padding-left:70px}
+    .hud-left{min-width:0;padding-left:110px}
     #timeBarWrap{width:76px}
     .hud-right{gap:12px;min-width:0}
     #comboBarWrap{display:none}
     #comboBox .hud-label{display:none}
     #comboVal{font-size:17px}
     #keepName{font-size:16px}
-    #muteBtn,#pauseBtn,#fsBtn{top:14px;width:32px;height:32px}
+    #muteBtn,#pauseBtn,#fsBtn,#langBtn{top:14px;width:32px;height:32px}
     #muteBtn{left:14px}
     #fsBtn{left:54px}
+    #langBtn{left:94px;font-size:11px}
     #pauseBtn{right:14px}
     .mode-row{gap:10px}
     .mode-btn{min-width:96px;padding:10px 8px 11px}
@@ -239,6 +241,33 @@
     .sign-right #bestTag{display:none}
     .stat-line{gap:14px}
   }
+  /* 英文下字距要收紧，否则衬线体散开；中文的 .3em 不适用于拉丁字母 */
+  body.lang-en .wordmark{letter-spacing:.06em;text-indent:0}
+  body.lang-en .overline{letter-spacing:.32em;text-indent:.32em}
+  body.lang-en .mh-text,
+  body.lang-en .tagline,
+  body.lang-en .hud-label{letter-spacing:.18em;text-indent:0}
+  body.lang-en .mode-btn .m-name{letter-spacing:.12em;text-indent:0}
+  body.lang-en .mode-btn .m-desc{letter-spacing:.1em;text-indent:0}
+  body.lang-en .ink-btn,
+  body.lang-en .ghost-btn{letter-spacing:.18em;text-indent:0}
+  body.lang-en .sign-btns button{letter-spacing:.18em;text-indent:0}
+  body.lang-en .stat .s-label{letter-spacing:.12em}
+  body.lang-en .sub-line{letter-spacing:.04em}
+  body.lang-en .seal-rank{width:58px;height:58px}
+  body.lang-en #rRankName{font-size:6.5px;letter-spacing:0;white-space:nowrap;margin-top:2px}
+  body.lang-en #recordLine{letter-spacing:.14em}
+  body.lang-en .bd h2{letter-spacing:.16em;text-indent:0}
+  body.lang-en .bd-tab{letter-spacing:.14em;text-indent:0;margin:0 18px}
+  body.lang-en .bd .ov{letter-spacing:.34em;text-indent:.34em}
+  body.lang-en .bd-note{letter-spacing:.08em}
+  body.lang-en .bd-row .loc{letter-spacing:.04em}
+  body.lang-en .bd-row .chip,
+  body.lang-en .bd-me .chip{letter-spacing:.08em;text-indent:0}
+  body.lang-en .bd-meta{letter-spacing:.1em}
+  body.lang-en #signText{letter-spacing:.12em}
+  body.lang-en #boardBtn{font-size:11px;letter-spacing:.02em}
+
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
   }
@@ -258,6 +287,14 @@
   body.playing #boardBtn{display:none}
   /* 底部署名常驻，即使开榜也不收起：遮罩留出下方一条给它 */
   #signMark{pointer-events:none}
+  #signMark span{white-space:nowrap}
+  /* 极窄屏：去掉署名两侧的装饰线，只留文字，避免与左下角「落款」相撞 */
+  @media (max-width:420px){
+    /* 极窄屏：署名单列一行，抬到底栏之上，避免与「落款」「隐私」挤在一起 */
+    #signMark > div{display:none}
+    #signMark{gap:0!important;bottom:52px!important}
+    #signBar{padding:10px 12px}
+  }
 
   #boardMask{
     position:fixed; top:0; right:0; bottom:0; left:0; z-index:80; display:none;
@@ -374,27 +411,27 @@
 <div id="hud">
   <div class="hud-left">
     <div id="timeBox">
-      <span class="hud-label">时间</span>
+      <span class="hud-label" data-i18n="hud.time">时间</span>
       <span class="hud-value" id="timeVal">20.00</span>
       <div id="timeBarWrap"><div id="timeBar"></div></div>
     </div>
     <div id="lifeBox">
-      <span class="hud-label">三息</span>
+      <span class="hud-label" data-i18n="hud.lives">三息</span>
       <div id="lifeDots"><span class="life-dot"></span><span class="life-dot"></span><span class="life-dot"></span></div>
     </div>
   </div>
   <div class="hud-center">
-    <span class="hud-label">保留</span>
+    <span class="hud-label" data-i18n="hud.keep">保留</span>
     <div class="keep-row"><span id="keepSwatch"></span><span id="keepName">朱砂</span></div>
     <div id="comboBox">
-      <span class="hud-label">连斩</span>
+      <span class="hud-label" data-i18n="hud.combo">连斩</span>
       <span id="comboVal">0</span><span id="multVal">×1</span>
       <div id="comboBarWrap"><div id="comboBar"></div></div>
     </div>
   </div>
   <div class="hud-right">
     <div class="score-wrap">
-      <span class="hud-label">分数</span>
+      <span class="hud-label" data-i18n="hud.score">分数</span>
       <span id="scoreVal">0</span>
     </div>
   </div>
@@ -418,109 +455,118 @@
   </svg>
 </button>
 
+<button id="langBtn" title="切换到 English" aria-label="切换到 English">中</button>
+
 <button id="pauseBtn" title="暂停" aria-label="暂停">
   <svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
     <path d="M3.5 2.5v9M8.5 2.5v9"/>
   </svg>
 </button>
 
-<div id="sweepHint">时尽 · 回收中 · 仍可切</div>
-<div id="playHint">滑动即切 · 一刀两断</div>
+<div id="sweepHint" data-i18n="hint.sweep">时尽 · 回收中 · 仍可切</div>
+<div id="playHint" data-i18n="hint.play">滑动即切 · 一刀两断</div>
 
 <div class="overlay" id="titleScreen">
   <div class="col">
-    <div class="overline">纸间工坊</div>
-    <h1 class="wordmark">纸间气球</h1>
+    <div class="overline" data-i18n="title.overline">纸间工坊</div>
+    <h1 class="wordmark" data-i18n="title.name">纸间气球</h1>
     <div class="rule-line"></div>
-    <div class="tagline">运笔即切 · <b>非留皆斩</b><br>心留一色 · 避雷取砂</div>
-    <div class="mode-head"><span class="mh-line"></span><span class="mh-text">点击择局</span><span class="mh-line"></span></div>
+    <div class="tagline" data-i18n-html="title.tag">运笔即切 · <b>非留皆斩</b><br>心留一色 · 避雷取砂</div>
+    <div class="mode-head"><span class="mh-line"></span><span class="mh-text" data-i18n="title.pick">点击择局</span><span class="mh-line"></span></div>
     <div class="mode-row" id="modeRow">
-      <button class="mode-btn on" data-mode="classic"><span class="m-name">经典</span><span class="m-desc">廿秒为限</span></button>
-      <button class="mode-btn" data-mode="zen"><span class="m-name">禅意</span><span class="m-desc">无雷静心</span></button>
-      <button class="mode-btn" data-mode="gale"><span class="m-name">疾风</span><span class="m-desc">三息为命</span></button>
+      <button class="mode-btn on" data-mode="classic"><span class="m-name" data-i18n="mode.classic">经典</span><span class="m-desc" data-i18n="mode.classic.desc">廿秒为限</span></button>
+      <button class="mode-btn" data-mode="zen"><span class="m-name" data-i18n="mode.zen">禅意</span><span class="m-desc" data-i18n="mode.zen.desc">无雷静心</span></button>
+      <button class="mode-btn" data-mode="gale"><span class="m-name" data-i18n="mode.gale">疾风</span><span class="m-desc" data-i18n="mode.gale.desc">三息为命</span></button>
     </div>
-    <button class="ink-btn" id="startBtn">入 局</button>
+    <button class="ink-btn" id="startBtn" data-i18n="title.start">入 局</button>
     <div class="meta-line" id="bestTitle"></div>
   </div>
 </div>
 
 <div class="overlay hidden" id="resultScreen">
   <div class="col">
-    <div class="overline">终局 · <span id="rDiff">经典</span></div>
+    <div class="overline"><span data-i18n="result.overline">终局 · </span><span id="rDiff">经典</span></div>
     <div class="score-row">
       <div id="rScore">0</div>
       <div class="seal-rank"><div id="rRank">B</div><div id="rRankName">渐入佳境</div></div>
     </div>
     <div id="recordLine"></div>
     <div class="stat-line">
-      <div class="stat"><div class="s-label">切落</div><div class="s-value" id="rTotal">0</div></div>
-      <div class="stat"><div class="s-label">切对</div><div class="s-value" id="rGood">0</div></div>
-      <div class="stat"><div class="s-label">误切</div><div class="s-value" id="rBad">0</div></div>
-      <div class="stat"><div class="s-label">漏网</div><div class="s-value" id="rMiss">0</div></div>
-      <div class="stat"><div class="s-label">保留</div><div class="s-value" id="rKeep">0</div></div>
+      <div class="stat"><div class="s-label" data-i18n="result.cut">切落</div><div class="s-value" id="rTotal">0</div></div>
+      <div class="stat"><div class="s-label" data-i18n="result.good">切对</div><div class="s-value" id="rGood">0</div></div>
+      <div class="stat"><div class="s-label" data-i18n="result.bad">误切</div><div class="s-value" id="rBad">0</div></div>
+      <div class="stat"><div class="s-label" data-i18n="result.miss">漏网</div><div class="s-value" id="rMiss">0</div></div>
+      <div class="stat"><div class="s-label" data-i18n="result.keep">保留</div><div class="s-value" id="rKeep">0</div></div>
     </div>
     <div class="sub-line"><span id="rCombo">最高连斩 0</span> · <span id="rStroke">一刀 0 连</span> · <span id="rTime">加时 0 秒</span></div>
     <div class="btn-row">
-      <button class="ink-btn" id="againBtn">再来一局</button>
-      <button class="ghost-btn" id="backBtn">回到卷首</button>
+      <button class="ink-btn" id="againBtn" data-i18n="result.again">再来一局</button>
+      <button class="ghost-btn" id="backBtn" data-i18n="result.back">回到卷首</button>
     </div>
   </div>
 </div>
 
 <div class="overlay hidden" id="pauseScreen">
   <div class="col">
-    <div class="overline">暂停 · 小憩</div>
-    <h1 class="wordmark">停云</h1>
+    <div class="overline" data-i18n="pause.overline">暂停 · 小憩</div>
+    <h1 class="wordmark" data-i18n="pause.name">停云</h1>
     <div class="rule-line"></div>
-    <div class="tagline">笔悬半空 · 气球未散</div>
+    <div class="tagline" data-i18n="pause.tag">笔悬半空 · 气球未散</div>
     <div class="btn-row">
-      <button class="ink-btn" id="resumeBtn">续 局</button>
-      <button class="ghost-btn" id="quitBtn">回到卷首</button>
+      <button class="ink-btn" id="resumeBtn" data-i18n="pause.resume">续 局</button>
+      <button class="ghost-btn" id="quitBtn" data-i18n="pause.quit">回到卷首</button>
     </div>
   </div>
 </div>
 
 <div id="signPop" class="hidden">
   <div class="sign-card">
-    <div class="overline">题名落款</div>
-    <input id="signInput" maxlength="12" placeholder="题下名号" autocomplete="off">
+    <div class="overline" data-i18n="sign.overline">题名落款</div>
+    <input id="signInput" maxlength="12" placeholder="题下名号" data-i18n-ph="sign.placeholder" autocomplete="off">
     <div class="sign-btns">
-      <button id="signOk">落 款</button>
-      <button id="signCancel">作 罢</button>
+      <button id="signOk" data-i18n="sign.ok">落 款</button>
+      <button id="signCancel" data-i18n="sign.cancel">作 罢</button>
     </div>
   </div>
 </div>
 
 <div id="signBar">
-  <button id="signBtn"><span class="sign-seal">署</span><span id="signText">落款留名</span></button>
-  <div class="sign-right"><span id="bestTag">最佳 0</span><a href="privacy.html" id="privacyLink">隐私</a></div>
+  <button id="signBtn"><span class="sign-seal" data-i18n="sign.seal">署</span><span id="signText">落款留名</span></button>
+  <div class="sign-right"><span id="bestTag">最佳 0</span><a href="privacy.html" id="privacyLink" data-i18n="bar.privacy">隐私</a></div>
 </div>
 
 
+    <!-- 底部个人标签 -->
+    <div id="signMark" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; color: rgba(141, 94, 29, 0.99); font-size: 10.5px; font-weight: 300; letter-spacing: 1.4px; z-index: 9999; pointer-events: none;">
+        <div style="width: 35px; height: 1px; background: linear-gradient(to right, transparent, rgba(235, 220, 200, 0.85));"></div>
+        <span data-i18n="sign.mark">未登录 · 亲署</span>
+        <div style="width: 35px; height: 1px; background: linear-gradient(to left, transparent, rgba(235, 220, 200, 0.85));"></div>
+    </div>
+
 <!-- ================= 榜单 ================= -->
-<button id="boardBtn" title="榜单" aria-label="榜单">榜</button>
+<button id="boardBtn" title="榜单" aria-label="榜单" data-i18n="board.btn" data-i18n-title="board.tip">榜</button>
 
 <div id="boardMask" aria-hidden="true">
   <div class="bd" role="dialog" aria-modal="true" aria-label="题名">
-    <button class="bd-close" id="bdClose" title="合上">✕</button>
-    <div class="ov">榜 · 天下</div>
-    <h2>题 名</h2>
+    <button class="bd-close" id="bdClose" title="合上" data-i18n-title="board.close">✕</button>
+    <div class="ov" data-i18n="board.ov">榜 · 天下</div>
+    <h2 data-i18n="board.title">题 名</h2>
     <div class="bd-rule"></div>
 
     <div class="bd-tabs">
-      <button class="bd-tab on" data-tab="high">高分</button>
-      <button class="bd-tab" data-tab="low">低分</button>
+      <button class="bd-tab on" data-tab="high" data-i18n="board.high">高分</button>
+      <button class="bd-tab" data-tab="low" data-i18n="board.low">低分</button>
     </div>
 
     <div class="bd-meta" id="bdMeta">
-      <span>榜上 <b id="bdTotal">0</b> 人</span>
-      <span id="bdRange">止录前百</span>
+      <span><span data-i18n="board.totalPre">榜上 </span><b id="bdTotal">0</b><span data-i18n="board.totalPost"> 人</span></span>
+      <span id="bdRange" data-i18n="board.range.more">止录前百</span>
     </div>
 
     <ol class="bd-list" id="bdList"></ol>
 
     <div class="bd-me" id="bdMe" hidden></div>
-    <p class="bd-note">榜上名次，三十秒一易</p>
+    <p class="bd-note" data-i18n="board.note">榜上名次，三十秒一易</p>
   </div>
 </div>
 
@@ -549,11 +595,11 @@ resize();
 
 /* ================= 配色：纸 · 墨 · 国画五色 ================= */
 const COLORS = [
-  { name: '朱砂', css: '#d9482f', rgb: [217, 72, 47] },
-  { name: '藤黄', css: '#e8a020', rgb: [232, 160, 32] },
-  { name: '石绿', css: '#2e8f7a', rgb: [46, 143, 122] },
-  { name: '黛蓝', css: '#3a5fa8', rgb: [58, 95, 168] },
-  { name: '胭脂', css: '#c2417e', rgb: [194, 65, 126] },
+  { name: '朱砂', en: 'Cinnabar', css: '#d9482f', rgb: [217, 72, 47] },
+  { name: '藤黄', en: 'Gamboge', css: '#e8a020', rgb: [232, 160, 32] },
+  { name: '石绿', en: 'Malachite', css: '#2e8f7a', rgb: [46, 143, 122] },
+  { name: '黛蓝', en: 'Indigo', css: '#3a5fa8', rgb: [58, 95, 168] },
+  { name: '胭脂', en: 'Carmine', css: '#c2417e', rgb: [194, 65, 126] },
 ];
 const GOLD = { name: '时砂', css: '#c9972e', rgb: [201, 151, 46] };
 const SLATE = { name: '墨涟', css: '#4a4e56', rgb: [74, 78, 86] };
@@ -840,17 +886,18 @@ function getBest(m) {
   if (key === 'classic') return parseInt(store.get('paper.best', '0'), 10) || 0;
   return 0;
 }
+function colorName(i) { return LANG === 'en' ? COLORS[i].en : COLORS[i].name; }
 function refreshMeta() {
   const b = getBest();
-  bestTag.textContent = '最佳 ' + b;
-  bestTitle.textContent = b > 0 ? (DIFFS[selMode].label + ' · 最佳 ' + b) : (DIFFS[selMode].label + ' · 尚无纪录');
+  bestTag.textContent = T('bar.best', b);
+  bestTitle.textContent = T('mode.' + selMode) + ' · ' + (b > 0 ? T('meta.best', b) : T('meta.none'));
 }
 function refreshModeUI() {
   modeBtns.forEach(btn => btn.classList.toggle('on', btn.dataset.mode === selMode));
 }
 function refreshSign() {
   const s = store.get('paper.sign', '');
-  signText.textContent = s ? s + ' · 已落款' : '落款留名';
+  signText.textContent = s ? T('sign.done', s) : T('sign.btn');
 }
 function refreshMuteIcon() {
   $('icoSoundOn').style.display = AudioEngine.muted ? 'none' : 'block';
@@ -914,7 +961,7 @@ function tierCue(hx, wy) {
   const tier = multTier();
   if (tier > G.lastTier) {
     G.lastTier = tier;
-    addFloat(hx, wy - 44, '倍增 ×' + tier, INK, 14, true);
+    addFloat(hx, wy - 44, T('float.mult', tier), INK, 14, true);
     AudioEngine.tier();
   }
 }
@@ -976,7 +1023,7 @@ function loseLife(x, y) {
   if (G.phase !== 'play' || !MODE().noTimer) return;
   G.lives = Math.max(0, G.lives - 1);
   updateLives();
-  addFloat(x, y, G.lives > 0 ? '息 −1' : '息 尽', SEAL, 22, true);
+  addFloat(x, y, T(G.lives > 0 ? 'float.lifeMinus' : 'float.lifeNone'), SEAL, 22, true);
   AudioEngine.breath(); shake(4, .3);
   hitFlash();
   if (G.lives <= 0) { AudioEngine.gong(); G.endPending = true; }
@@ -989,7 +1036,7 @@ function updateWind(dt) {
     const strong = Math.random() < .38;
     w.to = rand(34, strong ? 108 : 64) * (Math.random() < .5 ? -1 : 1) * SCALE;
     if (strong && G.phase === 'play') {
-      addFloat(W / 2, H * .3 + G.camY, '风 起', [125, 118, 105], 18, true);
+      addFloat(W / 2, H * .3 + G.camY, T('float.wind'), [125, 118, 105], 18, true);
       AudioEngine.gust();
     }
   }
@@ -1028,7 +1075,7 @@ function sliceBalloon(b, ang, hx, hy) {
   if (b.kind === 'bomb') {
     G.stats.bad++;
     G.score -= 3; G.combo = 0; G.comboT = 0; G.lastTier = 1; ptr.stroke = 0;
-    addFloat(hx, wy - 14, '墨雷 −3', SEAL, 20, true);
+    addFloat(hx, wy - 14, T('float.bomb'), SEAL, 20, true);
     AudioEngine.bomb(); shake(7, .35); G.freeze = Math.max(G.freeze, .05);
     hitFlash();
     if (m.noTimer) loseLife(hx, wy - 44);
@@ -1037,12 +1084,12 @@ function sliceBalloon(b, ang, hx, hy) {
     G.combo++; G.comboT = CFG.comboWindow;
     G.stats.maxCombo = Math.max(G.stats.maxCombo, G.combo);
     if (m.noTimer) {
-      if (G.lives < 3) { G.lives++; updateLives(); addFloat(hx, wy - 14, '息 +1', GOLD.rgb, 22, true); }
+      if (G.lives < 3) { G.lives++; updateLives(); addFloat(hx, wy - 14, T('float.lifePlus'), GOLD.rgb, 22, true); }
       else { G.score += 4; addFloat(hx, wy - 14, '+4', GOLD.rgb, 20, true); }
     } else {
       G.score += 2;
       const add = Math.min(2, CFG.timeCap - G.timeAdded);
-      if (add > 0 && G.phase === 'play') { G.time += add; G.timeAdded += add; addFloat(hx, wy - 14, '+' + add + ' 秒', GOLD.rgb, 22, true); }
+      if (add > 0 && G.phase === 'play') { G.time += add; G.timeAdded += add; addFloat(hx, wy - 14, T('float.addTime', add), GOLD.rgb, 22, true); }
       else addFloat(hx, wy - 14, '+2', GOLD.rgb, 18, true);
     }
     AudioEngine.gold(); G.freeze = Math.max(G.freeze, .04);
@@ -1055,7 +1102,7 @@ function sliceBalloon(b, ang, hx, hy) {
     G.score += 1;
     G.slow = CFG.slowDur;
     document.body.classList.add('slow');
-    addFloat(hx, wy - 14, '涟 · 缓', SLATE.rgb, 20, true);
+    addFloat(hx, wy - 14, T('float.ripple'), SLATE.rgb, 20, true);
     G.rings.push({ x: b.x, y: b.y, r: b.rx * .4, sp: 190 * SCALE, a: .5, col: [58, 95, 168] });
     G.rings.push({ x: b.x, y: b.y, r: b.rx * .2, sp: 130 * SCALE, a: .4, col: [58, 95, 168] });
     AudioEngine.slowmo(); G.freeze = Math.max(G.freeze, .04);
@@ -1066,7 +1113,7 @@ function sliceBalloon(b, ang, hx, hy) {
     const zen = G.diff === 'zen';
     if (!zen) G.score -= 1;
     G.combo = 0; G.comboT = 0; G.lastTier = 1; ptr.stroke = 0;
-    addFloat(hx, wy - 14, zen ? '误' : '误 −1', SEAL, 18, true);
+    addFloat(hx, wy - 14, T(zen ? 'float.wrong' : 'float.wrongMinus'), SEAL, 18, true);
     G.rings.push({ x: b.x, y: b.y, r: b.rx * .6, sp: 260 * SCALE, a: .7, col: SEAL });
     AudioEngine.wrong(); shake(2.5, .14);
     hitFlash();
@@ -1090,7 +1137,7 @@ function finalizeStroke() {
     const n = ptr.stroke, bonus = 2 * (n - 1);
     G.score += bonus;
     G.stats.bestStroke = Math.max(G.stats.bestStroke, n);
-    addFloat(ptr.sx, ptr.sy + G.camY - 40, n + ' 连斩 +' + bonus, SEAL, 23, true);
+    addFloat(ptr.sx, ptr.sy + G.camY - 40, T('float.multiSlice', n, bonus), SEAL, 23, true);
     AudioEngine.flourish();
     refreshHud();
   }
@@ -1112,7 +1159,7 @@ function startFever() {
   G.fever = CFG.feverDur;
   document.body.classList.add('fever');
   AudioEngine.fever();
-  addFloat(W / 2, H * .36 + G.camY, '心 流 · 倍 增', GOLD.rgb, 26, true);
+  addFloat(W / 2, H * .36 + G.camY, T('float.flow'), GOLD.rgb, 26, true);
 }
 function endFever(soft) {
   const was = G.fever > 0;
@@ -1188,7 +1235,7 @@ function startRound(modeKey) {
   sweepHint.classList.remove('show');
   playHint.classList.add('show');
   keepSwatch.style.background = COLORS[G.keep].css;
-  keepName.textContent = COLORS[G.keep].name;
+  keepName.textContent = colorName(G.keep);
   timeBox.style.display = df.noTimer ? 'none' : 'block';
   lifeBox.style.display = df.noTimer ? 'block' : 'none';
   if (df.noTimer) updateLives();
@@ -1240,34 +1287,45 @@ function endRound() {
   G.phase = 'ascend'; G.ascendT = 0; G.camTo = -52;
   AudioEngine.sweep();
 }
+let LAST = null;
+function paintResult() {
+  const d = LAST;
+  if (!d) return;
+  $('rDiff').textContent = T('mode.' + d.diff) + ' · ' + T('mode.' + d.diff + '.desc');
+  $('rScore').textContent = d.score;
+  $('rTotal').textContent = d.stats.total;
+  $('rGood').textContent = d.stats.good;
+  $('rBad').textContent = d.stats.bad;
+  $('rMiss').textContent = d.stats.missed;
+  $('rKeep').textContent = d.stats.kept;
+  $('rCombo').textContent = T('result.combo', d.stats.maxCombo);
+  $('rStroke').textContent = T('result.stroke', d.stats.bestStroke);
+  $('rTime').textContent = d.noTimer ? T('result.elapsed', Math.round(d.elapsed)) : T('result.addTime', d.timeAdded);
+  $('rRank').textContent = d.letter;
+  $('rRankName').textContent = T(d.diff === 'gale' && d.letter === 'S' ? 'rank.galeS' : 'rank.' + d.letter);
+  $('recordLine').textContent = d.isNew ? T('result.new') : (d.prev > 0 ? T('result.prev', d.prev) : '');
+}
 function showResult() {
   G.phase = 'result';
   document.body.classList.remove('playing');
   endFever(true);
   const s = G.stats;
   const df = DIFFS[G.diff];
-  $('rDiff').textContent = df.label + ' · ' + df.note;
-  $('rScore').textContent = G.score;
-  $('rTotal').textContent = s.total;
-  $('rGood').textContent = s.good;
-  $('rBad').textContent = s.bad;
-  $('rMiss').textContent = s.missed;
-  $('rKeep').textContent = s.kept;
-  $('rCombo').textContent = '最高连斩 ' + s.maxCombo;
-  $('rStroke').textContent = '一刀 ' + s.bestStroke + ' 连';
-  $('rTime').textContent = df.noTimer ? '历时 ' + Math.round(G.elapsed) + ' 秒' : '加时 ' + G.timeAdded + ' 秒';
   const RANKS = {
-    classic: [[70, 'S', '行云流水'], [45, 'A', '游刃有余'], [25, 'B', '渐入佳境'], [10, 'C', '小试牛刀'], [0, 'D', '再接再厉']],
-    zen: [[160, 'S', '行云流水'], [110, 'A', '游刃有余'], [65, 'B', '渐入佳境'], [30, 'C', '小试牛刀'], [0, 'D', '再接再厉']],
-    gale: [[180, 'S', '风樯阵马'], [120, 'A', '游刃有余'], [70, 'B', '渐入佳境'], [30, 'C', '小试牛刀'], [0, 'D', '再接再厉']],
+    classic: [[70, 'S'], [45, 'A'], [25, 'B'], [10, 'C'], [0, 'D']],
+    zen: [[160, 'S'], [110, 'A'], [65, 'B'], [30, 'C'], [0, 'D']],
+    gale: [[180, 'S'], [120, 'A'], [70, 'B'], [30, 'C'], [0, 'D']],
   };
   const rank = (RANKS[G.diff] || RANKS.classic).find(r => G.score >= r[0]) || RANKS.classic[4];
-  $('rRank').textContent = rank[1];
-  $('rRankName').textContent = rank[2];
   const prev = getBest(G.diff);
   const isNew = G.score > prev;
   if (isNew) store.set('paper.best.' + G.diff, String(G.score));
-  $('recordLine').textContent = isNew ? '新 纪 录' : (prev > 0 ? '历来最佳 ' + prev : '');
+  LAST = {
+    diff: G.diff, score: G.score, stats: s, letter: rank[1],
+    isNew: isNew, prev: prev,
+    elapsed: G.elapsed, timeAdded: G.timeAdded, noTimer: df.noTimer
+  };
+  paintResult();
   resultScreen.classList.remove('hidden');
   refreshMeta();
   AudioEngine.result();
@@ -1353,7 +1411,7 @@ function tryRestorePrivacySnapshot() {
     document.body.classList.toggle('fever', G.fever > 0);
     document.body.classList.toggle('slow', G.slow > 0);
     keepSwatch.style.background = COLORS[G.keep].css;
-    keepName.textContent = COLORS[G.keep].name;
+    keepName.textContent = colorName(G.keep);
     timeBox.style.display = df.noTimer ? 'none' : 'block';
     lifeBox.style.display = df.noTimer ? 'block' : 'none';
     if (df.noTimer) updateLives();
@@ -1569,7 +1627,7 @@ function drawBalloonBody(b, alpha) {
     ctx.fillStyle = rgba(INK, .85);
     ctx.font = `${Math.round(10 * SCALE)}px Georgia,"Songti SC","SimSun",serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('留', b.rx * .62, -b.ry * .62 + 1);
+    ctx.fillText(T('canvas.keep'), b.rx * .62, -b.ry * .62 + 1);
   }
   if (b.kind === 'bomb') {
     const pulse = .5 + .5 * Math.sin(gTime * 5 + b.w1);
@@ -1611,7 +1669,7 @@ function drawShelf() {
   ctx.fillStyle = rgba(INK, .45);
   ctx.font = '10px "Microsoft YaHei","PingFang SC",sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  ctx.fillText('回 收 架', W * .5, sy - 10);
+  ctx.fillText(T('canvas.shelf'), W * .5, sy - 10);
   ctx.strokeStyle = rgba(INK, .3);
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -1922,6 +1980,175 @@ signInput.addEventListener('keydown', e => {
 });
 signPop.addEventListener('pointerdown', e => { if (e.target === signPop) closeSign(); });
 
+/* ================= 文案（中 / 英） ================= */
+/* 界面文案集中在这里；切换语言时统一刷新，动态拼接的部分走 T()。
+   底部署名「未登录 · 亲署」不参与翻译。 */
+const LANG_KEY = 'paper.lang';
+let LANG = 'zh';
+
+const I18N = {
+  zh: {
+    'hud.time': '时间', 'hud.lives': '三息', 'hud.keep': '保留', 'hud.combo': '连斩', 'hud.score': '分数',
+    'hint.sweep': '时尽 · 回收中 · 仍可切', 'hint.play': '滑动即切 · 一刀两断',
+
+    'title.overline': '纸间工坊', 'title.name': '纸间气球',
+    'title.tag': '运笔即切 · <b>非留皆斩</b><br>心留一色 · 避雷取砂',
+    'title.pick': '点击择局', 'title.start': '入 局',
+    'mode.classic': '经典', 'mode.classic.desc': '廿秒为限',
+    'mode.zen': '禅意', 'mode.zen.desc': '无雷静心',
+    'mode.gale': '疾风', 'mode.gale.desc': '三息为命',
+    'meta.none': '尚无纪录', 'meta.best': '最佳 {0}',
+
+    'result.overline': '终局 · ', 'result.cut': '切落', 'result.good': '切对',
+    'result.bad': '误切', 'result.miss': '漏网', 'result.keep': '保留',
+    'result.combo': '最高连斩 {0}', 'result.stroke': '一刀 {0} 连',
+    'result.addTime': '加时 {0} 秒', 'result.elapsed': '历时 {0} 秒',
+    'result.new': '新 纪 录', 'result.prev': '历来最佳 {0}',
+    'result.again': '再来一局', 'result.back': '回到卷首',
+    'rank.S': '行云流水', 'rank.A': '游刃有余', 'rank.B': '渐入佳境',
+    'rank.C': '小试牛刀', 'rank.D': '再接再厉', 'rank.galeS': '风樯阵马',
+
+    'pause.overline': '暂停 · 小憩', 'pause.name': '停云', 'pause.tag': '笔悬半空 · 气球未散',
+    'pause.resume': '续 局', 'pause.quit': '回到卷首',
+
+    'sign.overline': '题名落款', 'sign.placeholder': '题下名号',
+    'sign.ok': '落 款', 'sign.cancel': '作 罢',
+    'sign.btn': '落款留名', 'sign.done': '{0} · 已落款',
+
+    'bar.best': '最佳 {0}', 'bar.privacy': '隐私',
+
+    'board.btn': '榜', 'board.tip': '榜单', 'board.close': '合上',
+    'board.ov': '榜 · 天下', 'board.title': '题 名',
+    'board.high': '高分', 'board.low': '低分',
+    'board.totalPre': '榜上 ', 'board.totalPost': ' 人',
+    'board.range.more': '止录前百', 'board.range.all': '尽录于此',
+    'board.note': '榜上名次，三十秒一易',
+    'board.loading': '取榜中', 'board.error': '榜暂不可用', 'board.error.sub': '稍后再看',
+    'board.empty': '虚位以待', 'board.empty.sub': '未有题名者 · 君可先登',
+    'board.me': '吾 · 本机', 'board.me.out': '吾 · 百名之外', 'board.me.none': '吾 · 未列榜中',
+
+    'canvas.keep': '留', 'canvas.shelf': '回 收 架',
+
+    'float.mult': '倍增 ×{0}', 'float.addTime': '+{0} 秒', 'float.lifeMinus': '息 −1', 'float.lifeNone': '息 尽',
+    'float.lifePlus': '息 +1', 'float.wind': '风 起', 'float.bomb': '墨雷 −3',
+    'float.ripple': '涟 · 缓', 'float.wrong': '误', 'float.wrongMinus': '误 −1',
+    'float.multiSlice': '{0} 连斩 +{1}', 'float.flow': '心 流 · 倍 增',
+
+    'sign.mark': '未登录 · 亲署', 'sign.seal': '署'
+  },
+  en: {
+    'hud.time': 'TIME', 'hud.lives': 'LIVES', 'hud.keep': 'KEEP', 'hud.combo': 'COMBO', 'hud.score': 'SCORE',
+    'hint.sweep': "Time's up · collecting · still slicing", 'hint.play': 'Slide to slice · one clean cut',
+
+    'title.overline': 'PAPER STUDIO', 'title.name': 'Paper Balloon',
+    'title.tag': 'Slice as you draw · <b>keep one color</b><br>Dodge the thunder · catch the sand',
+    'title.pick': 'CHOOSE A MODE', 'title.start': 'START',
+    'mode.classic': 'Classic', 'mode.classic.desc': '20 seconds',
+    'mode.zen': 'Zen', 'mode.zen.desc': 'no thunder',
+    'mode.gale': 'Gale', 'mode.gale.desc': 'three lives',
+    'meta.none': 'no record', 'meta.best': 'best {0}',
+
+    'result.overline': 'FINAL · ', 'result.cut': 'CUT', 'result.good': 'GOOD',
+    'result.bad': 'WRONG', 'result.miss': 'MISSED', 'result.keep': 'KEPT',
+    'result.combo': 'Best combo {0}', 'result.stroke': 'Max slice {0}',
+    'result.addTime': '+{0}s', 'result.elapsed': '{0}s elapsed',
+    'result.new': 'NEW RECORD', 'result.prev': 'Best {0}',
+    'result.again': 'PLAY AGAIN', 'result.back': 'TITLE',
+    'rank.S': 'Flawless', 'rank.A': 'Effortless', 'rank.B': 'Steady',
+    'rank.C': 'First try', 'rank.D': 'Keep on', 'rank.galeS': 'Storm sail',
+
+    'pause.overline': 'PAUSED · REST', 'pause.name': 'Still Cloud', 'pause.tag': 'Brush mid-air · balloons adrift',
+    'pause.resume': 'RESUME', 'pause.quit': 'TITLE',
+
+    'sign.overline': 'SIGNATURE', 'sign.placeholder': 'your name',
+    'sign.ok': 'SIGN', 'sign.cancel': 'CANCEL',
+    'sign.btn': 'Sign your name', 'sign.done': '{0} · signed',
+
+    'bar.best': 'Best {0}', 'bar.privacy': 'Privacy',
+
+    'board.btn': 'TOP', 'board.tip': 'Ranking', 'board.close': 'close',
+    'board.ov': 'THE BOARD', 'board.title': 'RANKS',
+    'board.high': 'HIGH', 'board.low': 'LOW',
+    'board.totalPre': '', 'board.totalPost': ' ranked',
+    'board.range.more': 'TOP 100', 'board.range.all': 'ALL',
+    'board.note': 'Ranks refresh every 30s',
+    'board.loading': 'Loading', 'board.error': 'Unavailable', 'board.error.sub': 'try again later',
+    'board.empty': 'NO ONE YET', 'board.empty.sub': 'be the first to rank',
+    'board.me': 'You · this device', 'board.me.out': 'You · beyond 100', 'board.me.none': 'You · not ranked',
+
+    'canvas.keep': 'K', 'canvas.shelf': 'S H E L F',
+
+    'float.mult': 'MULT ×{0}', 'float.addTime': '+{0}s', 'float.lifeMinus': 'LIFE −1', 'float.lifeNone': 'NO LIVES',
+    'float.lifePlus': 'LIFE +1', 'float.wind': 'WIND', 'float.bomb': 'THUNDER −3',
+    'float.ripple': 'RIPPLE', 'float.wrong': 'WRONG', 'float.wrongMinus': 'WRONG −1',
+    'float.multiSlice': '{0} SLICE +{1}', 'float.flow': 'FLOW · ×2',
+
+    'sign.mark': 'Designed by weidenglu', 'sign.seal': 'S'
+  }
+};
+
+/* 地区：服务端返回的是中文串，英文模式下按省市表翻译；其他国家的串原样显示 */
+const PLACE_EN = {
+  '北京': 'Beijing', '天津': 'Tianjin', '河北': 'Hebei', '山西': 'Shanxi',
+  '内蒙古': 'Inner Mongolia', '辽宁': 'Liaoning', '吉林': 'Jilin', '黑龙江': 'Heilongjiang',
+  '上海': 'Shanghai', '江苏': 'Jiangsu', '浙江': 'Zhejiang', '安徽': 'Anhui',
+  '福建': 'Fujian', '江西': 'Jiangxi', '山东': 'Shandong', '河南': 'Henan',
+  '湖北': 'Hubei', '湖南': 'Hunan', '广东': 'Guangdong', '广西': 'Guangxi',
+  '海南': 'Hainan', '重庆': 'Chongqing', '四川': 'Sichuan', '贵州': 'Guizhou',
+  '云南': 'Yunnan', '西藏': 'Tibet', '陕西': 'Shaanxi', '甘肃': 'Gansu',
+  '青海': 'Qinghai', '宁夏': 'Ningxia', '新疆': 'Xinjiang',
+  '香港': 'Hong Kong', '澳门': 'Macao', '台湾': 'Taiwan'
+};
+function placeLabel(p) {
+  if (LANG !== 'en' || !p) return p;
+  if (p === '未知地区') return 'Unknown';
+  if (p === '中国') return 'China';
+  const m = /^中国 · (.+)$/.exec(p);
+  if (m) return 'China · ' + (PLACE_EN[m[1]] || m[1]);
+  return p;
+}
+
+/* 服务端存的是中文玩法名，显示时按当前语言取词 */
+const MODE_KEY = { '经典': 'classic', '禅意': 'zen', '疾风': 'gale' };
+function modeLabel(name) {
+  const key = MODE_KEY[name];
+  return key ? T('mode.' + key) : name;
+}
+
+function T(key, a, b) {
+  const dict = I18N[LANG] || I18N.zh;
+  let str = dict[key];
+  if (str === undefined) str = I18N.zh[key];
+  if (str === undefined) return key;
+  if (a === undefined) return str;
+  return str.replace(/\{0\}/g, a).replace(/\{1\}/g, b === undefined ? '' : b);
+}
+
+function applyLang(lang, persist) {
+  LANG = lang === 'en' ? 'en' : 'zh';
+  document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-CN';
+  document.body.classList.toggle('lang-en', LANG === 'en');
+
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.getAttribute('data-i18n-html')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = T(el.getAttribute('data-i18n-ph')); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = T(el.getAttribute('data-i18n-title')); });
+
+  const lb = $('langBtn');
+  lb.textContent = LANG === 'en' ? 'EN' : '中';
+  const tip = LANG === 'en' ? '切换到中文' : '切换到 English';
+  lb.title = tip;
+  lb.setAttribute('aria-label', tip);
+
+  refreshMeta();
+  refreshSign();
+  keepName.textContent = colorName(G.keep);
+  paintResult();
+  if ($('boardMask').classList.contains('on')) { if (BOARD.last) bdRender(BOARD.last); else bdRefresh(true); }
+
+  if (persist) store.set(LANG_KEY, LANG);
+}
+
 /* ================= 初始化 ================= */
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
@@ -1931,8 +2158,12 @@ refreshMuteIcon();
 refreshFsIcon();
 if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen) $('fsBtn').style.display = 'none';
 refreshModeUI();
-refreshMeta();
-refreshSign();
+const savedLang = store.get(LANG_KEY, '');
+applyLang(savedLang || (/^zh/i.test(navigator.language || '') ? 'zh' : 'en'), false);
+$('langBtn').addEventListener('click', () => {
+  AudioEngine.ensure(); AudioEngine.click();
+  applyLang(LANG === 'zh' ? 'en' : 'zh', true);
+});
 G.camY = Math.max(520, H * 1.02); G.camTo = G.camY;
 seedTitle();
 tryRestorePrivacySnapshot(); // 载入时还原隐私页往返前的界面（见“隐私页往返快照”节）
@@ -1990,7 +2221,8 @@ const BOARD = {
   limit: 100,
   tab: 'high',
   seq: 0,           // 请求序号：丢弃过期响应，避免覆盖当前榜单
-  timer: 0          // 榜面停留时的轮询定时器
+  timer: 0,         // 榜面停留时的轮询定时器
+  last: null        // 最近一次取到的数据，切语言时用
 };
 
 function bdDeviceId() {
@@ -2055,8 +2287,8 @@ function bdFmt(v) { return v < 0 ? '−' + Math.abs(v) : String(v); }
 function bdState(title, sub) {
   const list = $('bdList');
   list.style.height = 'auto';
-  list.innerHTML = '<li class="bd-state"><div class="b">' + title + '</div>' +
-    (sub ? '<div class="s">' + sub + '</div>' : '') + '</li>';
+  list.innerHTML = '<li class="bd-state"><div class="b">' + T(title) + '</div>' +
+    (sub ? '<div class="s">' + T(sub) + '</div>' : '') + '</li>';
   $('bdMe').hidden = true;
   $('bdMeta').hidden = true;
   $('bdTotal').textContent = '0';
@@ -2086,6 +2318,7 @@ function bdFitRows() {
 }
 
 function bdRender(data, keep) {
+  BOARD.last = data;
   const tab = BOARD.tab;
   const all = bdSort(bdKeep(data.rows, tab), tab);
   const shown = all.slice(0, BOARD.limit);
@@ -2094,15 +2327,15 @@ function bdRender(data, keep) {
 
   $('bdMeta').hidden = false;
   $('bdTotal').textContent = data.total;
-  $('bdRange').textContent = data.total > BOARD.limit ? '止录前百' : '尽录于此';
+  $('bdRange').textContent = data.total > BOARD.limit ? T('board.range.more') : T('board.range.all');
 
-  if (!all.length) { bdState('虚位以待', '未有题名者 · 君可先登'); return; }
+  if (!all.length) { bdState('board.empty', 'board.empty.sub'); return; }
 
   list.innerHTML = shown.map((r, i) =>
     '<li class="bd-row' + (i < 3 ? ' top' : '') + '">' +
       '<span class="rk">' + bdPad(i + 1) + '</span>' +
-      '<span class="loc">' + r.p + '</span>' +
-      '<span class="chip">' + r.m + '</span>' +
+      '<span class="loc">' + placeLabel(r.p) + '</span>' +
+      '<span class="chip">' + modeLabel(r.m) + '</span>' +
       '<span class="sc' + (tab === 'low' ? ' neg' : '') + '">' + bdFmt(r.s) + '</span>' +
     '</li>'
   ).join('');
@@ -2118,7 +2351,7 @@ function bdRender(data, keep) {
   if (!me || !me.rank) {
     meEl.innerHTML =
       '<span class="rk">—</span>' +
-      '<span class="loc">吾 · 未列榜中</span>' +
+      '<span class="loc">' + T('board.me.none') + '</span>' +
       '<span class="chip">—</span>' +
       '<span class="sc">—</span>';
     return;
@@ -2127,21 +2360,21 @@ function bdRender(data, keep) {
   const inList = me.rank <= BOARD.limit;
   meEl.innerHTML =
     '<span class="rk">' + (inList ? bdPad(me.rank) : '—') + '</span>' +
-    '<span class="loc">' + (inList ? '吾 · 本机' : '吾 · 百名之外') + '</span>' +
-    '<span class="chip">' + (me.mode || '—') + '</span>' +
+    '<span class="loc">' + T(inList ? 'board.me' : 'board.me.out') + '</span>' +
+    '<span class="chip">' + (me.mode ? modeLabel(me.mode) : '—') + '</span>' +
     '<span class="sc' + (tab === 'low' ? ' neg' : '') + '">' + bdFmt(me.score) + '</span>';
 }
 
 function bdRefresh(silent) {
   const seq = ++BOARD.seq;
-  if (!silent) bdState('取榜中', '');
+  if (!silent) bdState('board.loading', '');
   bdFetch(BOARD.tab).then(data => {
     if (seq !== BOARD.seq) return;     // 已经切到别的榜了
     bdRender(data, !!silent);
   }).catch(() => {
     if (seq !== BOARD.seq) return;
     if (silent) return;                // 静默刷新失败就保留原样，不闪成错误态
-    bdState('榜暂不可用', '稍后再看');
+    bdState('board.error', 'board.error.sub');
   });
 }
 
@@ -2202,13 +2435,6 @@ window.HOLO_BOARD = {
   device: () => bdDeviceId()
 };
 </script>
-
-    <!-- 底部个人标签 -->
-    <div id="signMark" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; color: rgba(141, 94, 29, 0.99); font-size: 10.5px; font-weight: 300; letter-spacing: 1.4px; z-index: 9999; pointer-events: none;">
-        <div style="width: 35px; height: 1px; background: linear-gradient(to right, transparent, rgba(235, 220, 200, 0.85));"></div>
-        <span>未登录 · 亲署</span>
-        <div style="width: 35px; height: 1px; background: linear-gradient(to left, transparent, rgba(235, 220, 200, 0.85));"></div>
-    </div>
 
 </body>
 </html>
