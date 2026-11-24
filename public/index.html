@@ -2106,6 +2106,10 @@ const PLACE_EN = {
   '青海': 'Qinghai', '宁夏': 'Ningxia', '新疆': 'Xinjiang',
   '香港': 'Hong Kong', '澳门': 'Macao', '台湾': 'Taiwan'
 };
+function placeText(r) {
+  if (LANG === 'en' && r.pe) return r.pe;
+  return placeLabel(r.p);
+}
 function placeLabel(p) {
   if (LANG !== 'en' || !p) return p;
   if (p === '未知地区') return 'Unknown';
@@ -2256,6 +2260,7 @@ function bdSort(list, tab) {
 function bdNormalize(rows) {
   return (rows || []).map(r => ({
     p: r.place || r.province || '未知地区',
+    pe: r.place_en || '',
     m: r.mode || r.m || '经典',
     s: Number(r.score !== undefined ? r.score : r.s) || 0
   }));
@@ -2342,7 +2347,7 @@ function bdRender(data, keep) {
   list.innerHTML = shown.map((r, i) =>
     '<li class="bd-row' + (i < 3 ? ' top' : '') + '">' +
       '<span class="rk">' + bdPad(i + 1) + '</span>' +
-      '<span class="loc">' + placeLabel(r.p) + '</span>' +
+      '<span class="loc">' + placeText(r) + '</span>' +
       '<span class="chip">' + modeLabel(r.m) + '</span>' +
       '<span class="sc' + (tab === 'low' ? ' neg' : '') + '">' + bdFmt(r.s) + '</span>' +
     '</li>'
