@@ -2181,7 +2181,7 @@ seedTitle();
 tryRestorePrivacySnapshot(); // 载入时还原隐私页往返前的界面（见“隐私页往返快照”节）
 setTimeout(() => { if (G.phase === 'title') playHint.classList.remove('show'); }, 100);
 
-/* ================= 测试接口 ================= */
+/* ================= 调试接口 ================= */
 window.HOLO = {
   get phase() { return G.phase; },
   get score() { return G.score; },

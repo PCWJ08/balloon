@@ -1,13 +1,14 @@
 /**
- * 排行榜 · 单一全局实例（Durable Object）
+ * 排行榜的存储与查询。
  *
- * 全站只有一份数据，所有设备都写进这里；写入天然串行，不会互相覆盖。
- * 表在首次唤醒时自建，不需要额外跑迁移。
+ * 全站共用一份数据，写入串行执行，不会互相覆盖；数据表在首次使用时
+ * 自动建立，不需要额外的迁移步骤。每台设备只保留一组记录（历史最高分
+ * 与历史最低分），重复提交只更新，不新增行。
  *
- * 口径：
- *   高分榜 —— 只收正分，按分数降序
- *   低分榜 —— 只收负分，按分数升序
- *   0 分   —— 两榜都不收，也不参与任何统计
+ * 收录规则：
+ *   高分榜 —— 仅收录正分，按分数降序
+ *   低分榜 —— 仅收录负分，按分数升序
+ *   0 分   —— 两榜均不收录，也不计入人数统计
  */
 
 const MODE_LABEL = { classic: '经典', zen: '禅意', gale: '疾风' };
@@ -238,7 +239,7 @@ export class Board {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // 管理动作须携带 Worker 注入的内部标记，否则按普通请求处理
+    // 管理动作须携带服务端注入的内部标记；缺少标记时按普通请求处理
     const admin = url.searchParams.get('admin');
     if (admin && request.headers.get('X-Board-Admin') === '1') {
       if (admin === 'list') return this.adminList(url);
@@ -291,7 +292,7 @@ export class Board {
     const dir = tab === 'high' ? 'DESC' : 'ASC';
     const cmp = tab === 'high' ? '>' : '<';
 
-    // 0 分不入榜：hi > 0 / lo < 0 为最终过滤条件
+    // 0 分不入榜：hi > 0 与 lo < 0 是查询层的最终过滤条件
     const rows = this.sql.exec(
       `SELECT ${col} AS score, ${col}_mode AS mode, place
          FROM devices
@@ -331,7 +332,7 @@ export class Board {
   async submit(request, url) {
     const ip = request.headers.get('CF-Connecting-IP') || '';
 
-    // 兜底限流：单 IP 每分钟 120 次，正常玩家一分钟最多三局
+    // 访问频次上限：按来源地址统计。正常玩家一分钟最多三局，阈值留足余量
     const minute = Math.floor(Date.now() / 60000);
     const hit = this.hits.get(ip);
     if (hit && hit.minute === minute) {
@@ -361,7 +362,7 @@ export class Board {
       `SELECT hi, hi_mode, hi_at, lo, lo_mode, lo_at, place, last_at FROM devices WHERE dev = ?`, dev
     ).toArray()[0];
 
-    // 同一设备 1.5 秒内只收一次，防误触与脚本空转；正常一局远超这个间隔
+    // 同一设备的写入间隔下限：过滤重复提交与脚本空转，正常对局的间隔远大于此
     if (row && now - (row.last_at || 0) < 1500) {
       return this.json({ ok: false, reason: 'fast' }, 429);
     }
@@ -372,7 +373,7 @@ export class Board {
     if (score > 0 && (hi === null || score > hi)) { hi = score; hiMode = MODE_LABEL[mode]; hiAt = now; }
     if (score < 0 && (lo === null || score < lo)) { lo = score; loMode = MODE_LABEL[mode]; loAt = now; }
 
-    // 地区以最近一次有效解析为准，解析不到就保留旧值
+    // 地区以最近一次解析成功的结果为准；本次解析失败时保留原值，避免信息退化
     const newPlace = (row && row.place && place === '未知地区') ? row.place : place;
 
     this.sql.exec(
