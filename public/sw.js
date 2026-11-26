@@ -1,4 +1,4 @@
-/* 纸间气球 · Service Worker —— 导航/清单走网络优先，其余资源缓存优先 */
+/* 纸间气球 · 导航/清单走网络优先，其余资源缓存优先 */
 const CACHE = 'paper-balloon-v5';
 const ASSETS = [
   './',
