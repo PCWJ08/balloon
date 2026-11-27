@@ -2181,7 +2181,7 @@ seedTitle();
 tryRestorePrivacySnapshot(); // 载入时还原隐私页往返前的界面（见“隐私页往返快照”节）
 setTimeout(() => { if (G.phase === 'title') playHint.classList.remove('show'); }, 100);
 
-/* ================= 调试接口 ================= */
+/* ================= 只读探针 ================= */
 window.HOLO = {
   get phase() { return G.phase; },
   get score() { return G.score; },
@@ -2248,7 +2248,7 @@ function bdDeviceId() {
   return v;
 }
 
-/* 服务端已按「正分进高分、负分进低分、零分不收」过滤；此处做二次校验 */
+/* 按当前榜单过滤：高分榜只留正分，低分榜只留负分 */
 function bdKeep(list, tab) {
   return list.filter(r => tab === 'high' ? r.s > 0 : r.s < 0);
 }
@@ -2430,7 +2430,7 @@ Array.from(document.querySelectorAll('.bd-tab')).forEach(t => {
   });
 });
 
-/* 调试接口：只读，不改变游戏状态 */
+/* 榜单只读探针：供本地排查，不参与游戏逻辑 */
 window.HOLO_BOARD = {
   get tab() { return BOARD.tab; },
   get total() { return Number($('bdTotal').textContent) || 0; },
@@ -2444,7 +2444,6 @@ window.HOLO_BOARD = {
   },
   open: () => bdOpen(),
   close: () => bdClose(),
-  submit: (s, m) => bdAfterRound(s, m || 'classic'),
   device: () => bdDeviceId()
 };
 </script>

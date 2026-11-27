@@ -29,7 +29,7 @@ export default {
 };
 
 async function board(request, env) {
-  // 榜单接口不解释管理参数，避免借公开入口触达管理能力
+  // 管理请求只走 /api/board/admin
   if (new URL(request.url).searchParams.has('admin')) {
     return new Response('Not Found', { status: 404 });
   }
@@ -45,7 +45,7 @@ async function board(request, env) {
   const headers = new Headers(CORS);
   headers.set('Content-Type', 'application/json; charset=utf-8');
 
-  // 响应内含调用方自身名次，因人而异，不可进共享缓存，否则他人会读到别人的名次
+  // 带 dev 的响应含有个人名次，不写入共享缓存
   const personal = new URL(request.url).searchParams.has('dev');
   headers.set('Cache-Control', request.method === 'GET' && res.ok && !personal
     ? 'public, max-age=' + TTL
@@ -54,7 +54,7 @@ async function board(request, env) {
   return new Response(res.body, { status: res.status, headers });
 }
 
-/* 管理接口：未配置凭据或校验失败时一律返回 404，不暴露该路径的存在性 */
+/* 管理接口：凭据缺失或校验失败时返回 404，与非管理路径表现一致 */
 async function admin(request, env, url) {
   const token = url.searchParams.get('token') || request.headers.get('X-Admin-Token') || '';
   if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {

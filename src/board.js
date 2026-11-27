@@ -150,6 +150,26 @@ function regionLabel(region) {
   return REGION_ZH[r.toLowerCase()] || r;
 }
 
+/* 反向表：中文地区名 → 英文，英文页用。
+   不然「日本 · 东京」会原样拼进 place_en，成了 Japan · 东京。 */
+function titleCase(s) {
+  return String(s || '').replace(/\b[a-z]/g, (c) => c.toUpperCase());
+}
+
+const REGION_EN = {};
+for (const key in REGION_ZH) {
+  const zh = REGION_ZH[key];
+  if (zh && !REGION_EN[zh]) REGION_EN[zh] = titleCase(key);
+}
+
+/* 地区转英文：已是英文的原样返回（全小写的补上大写）；中文查表；查不到就返回空，宁可只写国家 */
+function regionLabelEn(region) {
+  const r = String(region || '').trim();
+  if (!r) return '';
+  if (/[\u4e00-\u9fa5]/.test(r)) return REGION_EN[r] || '';
+  return /^[a-z][a-z\s.'-]*$/.test(r) ? titleCase(r) : r;
+}
+
 /* 将请求头中的地理位置转换为展示文本 */
 function placeOf(cf) {
   if (!cf) return '未知地区';
@@ -200,7 +220,12 @@ function displayPlace(raw) {
     if (zhHead) {
       const enHead = byCode ? byCode[1] : COUNTRY_EN[head];
       if (!regionText(enHead, region)) return { zh: zhHead, en: enHead };
-      return { zh: zhHead + ' · ' + regionLabel(region), en: enHead + ' · ' + region };
+      // 中文地区名（东京）翻译成英文（Tokyo），查不到就不带地区，免得中英混排
+      const enRegion = regionLabelEn(region);
+      return {
+        zh: zhHead + ' · ' + regionLabel(region),
+        en: enRegion ? enHead + ' · ' + enRegion : enHead
+      };
     }
     return { zh: '海外', en: 'Overseas' };
   }
@@ -239,7 +264,7 @@ export class Board {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // 管理动作须携带服务端注入的内部标记；缺少标记时按普通请求处理
+    // 管理调用由入口注入内部标记，此处只处理带标记的请求
     const admin = url.searchParams.get('admin');
     if (admin && request.headers.get('X-Board-Admin') === '1') {
       if (admin === 'list') return this.adminList(url);
@@ -292,7 +317,7 @@ export class Board {
     const dir = tab === 'high' ? 'DESC' : 'ASC';
     const cmp = tab === 'high' ? '>' : '<';
 
-    // 0 分不入榜：hi > 0 与 lo < 0 是查询层的最终过滤条件
+    // 0 分不入榜
     const rows = this.sql.exec(
       `SELECT ${col} AS score, ${col}_mode AS mode, place
          FROM devices
@@ -332,7 +357,7 @@ export class Board {
   async submit(request, url) {
     const ip = request.headers.get('CF-Connecting-IP') || '';
 
-    // 访问频次上限：按来源地址统计。正常玩家一分钟最多三局，阈值留足余量
+    // 按来源地址限制请求频次
     const minute = Math.floor(Date.now() / 60000);
     const hit = this.hits.get(ip);
     if (hit && hit.minute === minute) {
@@ -362,7 +387,7 @@ export class Board {
       `SELECT hi, hi_mode, hi_at, lo, lo_mode, lo_at, place, last_at FROM devices WHERE dev = ?`, dev
     ).toArray()[0];
 
-    // 同一设备的写入间隔下限：过滤重复提交与脚本空转，正常对局的间隔远大于此
+    // 同一设备的最小写入间隔
     if (row && now - (row.last_at || 0) < 1500) {
       return this.json({ ok: false, reason: 'fast' }, 429);
     }
@@ -373,7 +398,7 @@ export class Board {
     if (score > 0 && (hi === null || score > hi)) { hi = score; hiMode = MODE_LABEL[mode]; hiAt = now; }
     if (score < 0 && (lo === null || score < lo)) { lo = score; loMode = MODE_LABEL[mode]; loAt = now; }
 
-    // 地区以最近一次解析成功的结果为准；本次解析失败时保留原值，避免信息退化
+    // 本次解析不到地区时，沿用上次的结果
     const newPlace = (row && row.place && place === '未知地区') ? row.place : place;
 
     this.sql.exec(
